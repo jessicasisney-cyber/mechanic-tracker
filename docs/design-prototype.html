@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    input, select, textarea, button { font-family: inherit; }
+    @keyframes slideIn { from { transform: translateX(500px); } to { transform: translateX(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    input:focus, select:focus, textarea:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    tr:hover td { background: #f0f7ff !important; }
+  </style>
+</helmet>
+
+<div id="__mwt_app" style="display: flex; flex-direction: column; height: 100vh; background: #f1f5f9; overflow: hidden;">
+
+  <!-- HEADER -->
+  <div style="background: #0f172a; color: #fff; display: flex; align-items: center; padding: 0 20px; height: 54px; flex-shrink: 0; gap: 14px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+    </svg>
+    <span style="font-weight: 700; font-size: 15px; letter-spacing: -0.02em; color: #f8fafc;">Mechanic Work Tracker</span>
+    <div style="flex: 1;"></div>
+    <button onClick="{{ exportCSV }}" style="background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer;">Export CSV</button>
+    <button data-mwt-accent="true" onClick="{{ openNew }}" style="color: white; border: none; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; margin-left: 4px;">+ New Entry</button>
+  </div>
+
+  <!-- STATS BAR -->
+  <div style="background: #1e293b; display: flex; align-items: center; padding: 0 24px; height: 56px; flex-shrink: 0; gap: 0; border-bottom: 1px solid #334155;">
+    <div style="display: flex; flex-direction: column; gap: 1px; padding-right: 28px; border-right: 1px solid #334155; margin-right: 28px;">
+      <span style="font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Entries</span>
+      <span style="font-size: 20px; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; line-height: 1.2;">{{ totalEntries }}</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 1px; padding-right: 28px; border-right: 1px solid #334155; margin-right: 28px;">
+      <span style="font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Total Hours</span>
+      <span style="font-size: 20px; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; line-height: 1.2;">{{ totalHours }}</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 1px; padding-right: 28px; border-right: 1px solid #334155; margin-right: 28px;">
+      <span style="font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Parts Cost</span>
+      <span style="font-size: 20px; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; line-height: 1.2;">{{ totalCost }}</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 1px;">
+      <span style="font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Customers</span>
+      <span style="font-size: 20px; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; line-height: 1.2;">{{ customers }}</span>
+    </div>
+    <sc-if value="{{ hasScopeChanges }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 6px; background: #451a03; border: 1px solid #78350f; border-radius: 6px; padding: 5px 10px;">
+        <span style="font-size: 13px;">⚠️</span>
+        <span style="font-size: 12px; color: #fcd34d; font-weight: 600;">{{ scopeCount }} scope change(s)</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 9px 20px; display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+    <div style="position: relative; flex: 1; max-width: 300px;">
+      <svg style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" placeholder="Search customer, vehicle, notes…" value="{{ search }}" onChange="{{ setSearch }}" style="width: 100%; padding: 7px 10px 7px 30px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none;" />
+    </div>
+    <select value="{{ filterVehicleType }}" onChange="{{ setFilterVehicleType }}" style="padding: 7px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #374151; background: white; cursor: pointer; outline: none;">
+      <option value="">All Vehicles</option>
+      <option value="Car">Car</option>
+      <option value="Truck">Truck</option>
+      <option value="SUV">SUV</option>
+      <option value="Motorcycle">Motorcycle</option>
+      <option value="RV">RV</option>
+      <option value="Other">Other</option>
+    </select>
+    <select value="{{ filterStatus }}" onChange="{{ setFilterStatus }}" style="padding: 7px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #374151; background: white; cursor: pointer; outline: none;">
+      <option value="">All Part Statuses</option>
+      <option value="Ordered">Ordered</option>
+      <option value="In Transit">In Transit</option>
+      <option value="Arrived">Arrived</option>
+      <option value="Installed">Installed</option>
+      <option value="Returned">Returned</option>
+      <option value="N/A">N/A</option>
+    </select>
+    <select value="{{ filterProject }}" onChange="{{ setFilterProject }}" style="padding: 7px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #374151; background: white; cursor: pointer; outline: none;">
+      <option value="">All Projects</option>
+      <option value="Repair">Repair</option>
+      <option value="Maintenance">Maintenance</option>
+      <option value="Diagnostic">Diagnostic</option>
+      <option value="Custom Build">Custom Build</option>
+      <option value="Inspection">Inspection</option>
+      <option value="Other">Other</option>
+    </select>
+    <span style="margin-left: auto; font-size: 12px; color: #94a3b8; white-space: nowrap;">{{ filteredCount }} result(s)</span>
+  </div>
+
+  <!-- TABLE AREA -->
+  <div style="flex: 1; overflow: auto;" onClick="{{ tableClickHandler }}">
+
+    <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 14px; color: #94a3b8; padding: 60px 20px;">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <div style="font-size: 16px; font-weight: 600; color: #64748b;">{{ emptyHeading }}</div>
+        <div style="font-size: 13px; color: #94a3b8; text-align: center; max-width: 280px; line-height: 1.6;">{{ emptySubtext }}</div>
+        <sc-if value="{{ isBlank }}" hint-placeholder-val="{{ false }}">
+          <button data-mwt-accent="true" onClick="{{ openNew }}" style="margin-top: 4px; color: white; border: none; padding: 9px 20px; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer;">+ Log First Entry</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showTable }}" hint-placeholder-val="{{ false }}">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f8fafc; position: sticky; top: 0; z-index: 10;">
+            <th style="padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; border-bottom: 2px solid #e2e8f0;">Date</th>
+            <th style="padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #e2e8f0;">Customer</th>
+            <th style="padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #e2e8f0;">Vehicle</th>
+            <th style="padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #e2e8f0;">Project</th>
+            <th style="padding: 10px 16px; text-align: right; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; border-bottom: 2px solid #e2e8f0;">Hrs</th>
+            <th style="padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #e2e8f0;">Parts / Status</th>
+            <th style="padding: 10px 16px; text-align: right; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #e2e8f0;">Cost</th>
+            <th style="padding: 10px 16px; text-align: left; font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #e2e8f0;">Notes</th>
+            <th style="padding: 10px 16px; border-bottom: 2px solid #e2e8f0;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ filtered }}" as="entry" hint-placeholder-count="6">
+            <tr data-eid="{{ entry.id }}" style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 11px 16px; color: #475569; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12.5px; vertical-align: top;">{{ entry.dateDisplay }}</td>
+              <td style="padding: 11px 16px; vertical-align: top;">
+                <div style="font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">{{ entry.customerName }}</div>
+              </td>
+              <td style="padding: 11px 16px; max-width: 160px; vertical-align: top;">
+                <div style="color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ entry.makeModel }}</div>
+                <sc-if value="{{ entry.vehicleType }}" hint-placeholder-val="{{ false }}">
+                  <div style="color: #94a3b8; font-size: 11px; margin-top: 1px;">{{ entry.vehicleType }}</div>
+                </sc-if>
+              </td>
+              <td style="padding: 11px 16px; max-width: 180px; vertical-align: top;">
+                <div style="font-weight: 500; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ entry.projectType }}</div>
+                <sc-if value="{{ entry.projectDescription }}" hint-placeholder-val="{{ false }}">
+                  <div style="color: #94a3b8; font-size: 11px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ entry.projectDescription }}</div>
+                </sc-if>
+              </td>
+              <td style="padding: 11px 16px; text-align: right; color: #374151; font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 500; vertical-align: top;">{{ entry.timeDisplay }}</td>
+              <td style="padding: 11px 16px; max-width: 200px; vertical-align: top;">
+                <sc-for list="{{ entry.partsDisplay }}" as="pd" hint-placeholder-count="1">
+                  <div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #f1f5f9;">
+                    <sc-if value="{{ pd.hasName }}" hint-placeholder-val="{{ false }}">
+                      <div style="color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px;">{{ pd.partName }}</div>
+                    </sc-if>
+                    <sc-if value="{{ pd.hasBadge }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ pd.badgeStyle }}">{{ pd.partStatus }}</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ entry.hasExtraParts }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">+{{ entry.extraParts }} more part(s)</div>
+                </sc-if>
+              </td>
+              <td style="padding: 11px 16px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; color: #0f172a; vertical-align: top;">{{ entry.costDisplay }}</td>
+              <td style="padding: 11px 16px; max-width: 200px; vertical-align: top;">
+                <sc-if value="{{ entry.hasScope }}" hint-placeholder-val="{{ false }}">
+                  <span style="display: inline-block; background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.04em; margin-bottom: 4px;">⚠ SCOPE CHANGE</span>
+                </sc-if>
+                <sc-if value="{{ entry.workNotes }}" hint-placeholder-val="{{ false }}">
+                  <div style="color: #64748b; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; display: block;">{{ entry.workNotes }}</div>
+                </sc-if>
+              </td>
+              <td style="padding: 11px 16px; text-align: right; white-space: nowrap; vertical-align: top;">
+                <button data-action="edit" style="background: none; border: 1px solid #e2e8f0; color: #374151; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; margin-right: 4px;">Edit</button>
+                <button data-action="delete" style="background: none; border: 1px solid #fecaca; color: #dc2626; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer;">Del</button>
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </sc-if>
+  </div>
+</div>
+
+<!-- FORM OVERLAY -->
+<sc-if value="{{ showForm }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 50; animation: fadeIn 0.15s ease; display: flex; justify-content: flex-end;" onClick="{{ closeForm }}">
+    <div style="width: 510px; background: white; height: 100%; display: flex; flex-direction: column; animation: slideIn 0.22s cubic-bezier(0.16,1,0.3,1); box-shadow: -8px 0 40px rgba(0,0,0,0.2);" onClick="{{ stopProp }}">
+
+      <!-- Drawer Header -->
+      <div style="padding: 18px 22px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; background: #f8fafc; flex-shrink: 0;">
+        <div style="font-weight: 700; font-size: 16px; color: #0f172a; letter-spacing: -0.02em;">{{ formTitle }}</div>
+        <div style="flex: 1;"></div>
+        <button onClick="{{ closeForm }}" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 22px; line-height: 1; padding: 2px 6px; border-radius: 4px;">×</button>
+      </div>
+
+      <!-- Drawer Body -->
+      <div style="flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 15px;">
+
+        <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Job Info</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Date <span style="color: #dc2626;">*</span></label>
+            <input type="date" value="{{ form.date }}" onChange="{{ setDate }}" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Vehicle Type</label>
+            <select value="{{ form.vehicleType }}" onChange="{{ setVehicleType }}" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; background: white; outline: none;">
+              <option value="">Select…</option>
+              <option value="Car">Car</option>
+              <option value="Truck">Truck</option>
+              <option value="SUV">SUV</option>
+              <option value="Motorcycle">Motorcycle</option>
+              <option value="RV">RV</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Customer Name <span style="color: #dc2626;">*</span></label>
+            <input type="text" value="{{ form.customerName }}" onChange="{{ setCustomerName }}" placeholder="e.g. John Smith" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Make / Model</label>
+            <input type="text" value="{{ form.makeModel }}" onChange="{{ setMakeModel }}" placeholder="e.g. 2018 Ford F-150" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none;" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Project Type</label>
+            <select value="{{ form.projectType }}" onChange="{{ setProjectType }}" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; background: white; outline: none;">
+              <option value="">Select…</option>
+              <option value="Repair">Repair</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Diagnostic">Diagnostic</option>
+              <option value="Custom Build">Custom Build</option>
+              <option value="Inspection">Inspection</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Time Spent (hrs)</label>
+            <input type="number" value="{{ form.timeSpent }}" onChange="{{ setTimeSpent }}" placeholder="0.0" step="0.25" min="0" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none;" />
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Project Description / Scope</label>
+          <textarea value="{{ form.projectDescription }}" onChange="{{ setProjectDescription }}" placeholder="Describe the agreed-upon scope of work…" rows="2" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none; resize: vertical;"></textarea>
+        </div>
+
+        <!-- PARTS SECTION -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Parts</div>
+          <button onClick="{{ addPart }}" style="background: none; border: 1px solid #e2e8f0; color: #2563eb; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer;">+ Add Part</button>
+        </div>
+
+        <sc-for list="{{ partItems }}" as="item" hint-placeholder-count="1">
+          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: #fafafa;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em;">{{ item.label }}</span>
+              <sc-if value="{{ item.isRemovable }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ item.remove }}" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; line-height: 1; padding: 0 2px;" title="Remove part">×</button>
+              </sc-if>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="display: block; font-size: 10px; font-weight: 700; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Part Name</label>
+                <input type="text" value="{{ item.partName }}" onChange="{{ item.setPartName }}" placeholder="e.g. Alternator" style="width: 100%; padding: 7px 9px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 13px; color: #0f172a; outline: none; background: white;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 10px; font-weight: 700; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Vendor</label>
+                <input type="text" value="{{ item.vendor }}" onChange="{{ item.setVendor }}" placeholder="e.g. AutoZone" style="width: 100%; padding: 7px 9px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 13px; color: #0f172a; outline: none; background: white;" />
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="display: block; font-size: 10px; font-weight: 700; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Cost ($)</label>
+                <input type="number" value="{{ item.partCost }}" onChange="{{ item.setPartCost }}" placeholder="0.00" step="0.01" min="0" style="width: 100%; padding: 7px 9px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 13px; color: #0f172a; outline: none; background: white;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 10px; font-weight: 700; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Status</label>
+                <select value="{{ item.partStatus }}" onChange="{{ item.setPartStatus }}" style="width: 100%; padding: 7px 9px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 13px; color: #0f172a; background: white; outline: none;">
+                  <option value="">Select…</option>
+                  <option value="Ordered">Ordered</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Arrived">Arrived</option>
+                  <option value="Installed">Installed</option>
+                  <option value="Returned">Returned</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 10px; font-weight: 700; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Receipt #</label>
+                <input type="text" value="{{ item.receiptRef }}" onChange="{{ item.setReceiptRef }}" placeholder="INV-001" style="width: 100%; padding: 7px 9px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 13px; color: #0f172a; outline: none; background: white;" />
+              </div>
+            </div>
+          </div>
+        </sc-for>
+
+        <!-- NOTES -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Notes</div>
+
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Work Notes</label>
+          <textarea value="{{ form.workNotes }}" onChange="{{ setWorkNotes }}" placeholder="What happened? Issues found, parts tried, outcomes…" rows="3" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none; resize: vertical;"></textarea>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Customer Notes</label>
+          <textarea value="{{ form.customerNotes }}" onChange="{{ setCustomerNotes }}" placeholder="What did the customer request or agree to?" rows="2" style="width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none; resize: vertical;"></textarea>
+        </div>
+
+        <!-- SCOPE CHANGE -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 12px;">
+          <button onClick="{{ toggleScope }}" style="background: none; border: none; display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 0; width: 100%; text-align: left;">
+            <span style="font-size: 13px;">⚠️</span>
+            <span style="font-size: 12px; font-weight: 700; color: #b45309;">{{ scopeToggleLabel }}</span>
+            <span style="margin-left: auto; color: #94a3b8; font-size: 13px;">{{ scopeArrow }}</span>
+          </button>
+          <sc-if value="{{ showScopeSection }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="font-size: 11px; color: #92400e; line-height: 1.5;">Document customer-requested changes mid-project — your protection if disputes arise later.</div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">Date of Change</label>
+                <input type="date" value="{{ form.scopeChangeDate }}" onChange="{{ setScopeChangeDate }}" style="width: 100%; padding: 8px 10px; border: 1px solid #fcd34d; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none; background: white;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;">What Changed</label>
+                <textarea value="{{ form.scopeChangeNotes }}" onChange="{{ setScopeChangeNotes }}" placeholder="Describe what the customer added or changed, and why…" rows="3" style="width: 100%; padding: 8px 10px; border: 1px solid #fcd34d; border-radius: 6px; font-size: 13px; color: #0f172a; outline: none; resize: vertical; background: white;"></textarea>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+      </div>
+
+      <!-- Drawer Footer -->
+      <div style="padding: 14px 22px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; background: #f8fafc; flex-shrink: 0;">
+        <button onClick="{{ closeForm }}" style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #374151; font-size: 13px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button data-mwt-accent="true" onClick="{{ submit }}" style="flex: 2; padding: 10px; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: -0.01em;">{{ submitLabel }}</button>
+      </div>
+
+    </div>
+  </div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;fontSize&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Large&quot;,&quot;options&quot;:[&quot;Normal&quot;,&quot;Large&quot;,&quot;Extra Large&quot;],&quot;section&quot;:&quot;Display&quot;},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#dc2626&quot;,&quot;options&quot;:[&quot;#2563eb&quot;,&quot;#dc2626&quot;,&quot;#059669&quot;,&quot;#7c3aed&quot;],&quot;section&quot;:&quot;Display&quot;}}">
+
+class Component extends DCLogic {
+  state = {
+    entries: [],
+    showForm: false,
+    editId: null,
+    search: '',
+    filterStatus: '',
+    filterVehicleType: '',
+    filterProject: '',
+    showScopeSection: false,
+    form: this.blankForm(),
+  };
+
+  blankPart() {
+    return { partName: '', vendor: '', partCost: '', partStatus: '', receiptRef: '' };
+  }
+
+  blankForm() {
+    return {
+      date: new Date().toISOString().split('T')[0],
+      vehicleType: '', makeModel: '', customerName: '',
+      projectType: '', projectDescription: '', timeSpent: '',
+      parts: [this.blankPart()],
+      workNotes: '', customerNotes: '',
+      scopeChangeDate: '', scopeChangeNotes: '',
+    };
+  }
+
+  // Migrate old flat-part entries to parts array
+  migrate(entries) {
+    return entries.map(e => {
+      if (e.parts) return e;
+      const hasPart = e.partName || e.vendor || e.partCost || e.partStatus;
+      return {
+        ...e,
+        parts: hasPart
+          ? [{ partName: e.partName || '', vendor: e.vendor || '', partCost: e.partCost || '', partStatus: e.partStatus || '', receiptRef: e.receiptRef || '' }]
+          : [this.blankPart()],
+      };
+    });
+  }
+
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem('mechanic_tracker_v1');
+      if (raw) this.setState({ entries: this.migrate(JSON.parse(raw)) });
+    } catch(e) {}
+    this.applyTheme();
+  }
+
+  componentDidUpdate() {
+    this.applyTheme();
+  }
+
+  applyTheme() {
+    const fs = this.props.fontSize ?? 'Normal';
+    const zoom = { 'Normal': 1, 'Large': 1.22, 'Extra Large': 1.45 }[fs] || 1;
+    const accent = this.props.accentColor ?? '#2563eb';
+    let el = document.getElementById('__mwt_theme');
+    if (!el) { el = document.createElement('style'); el.id = '__mwt_theme'; document.head.appendChild(el); }
+    el.textContent = `
+      #__mwt_app { zoom: ${zoom}; }
+      [data-mwt-accent] { background-color: ${accent} !important; }
+      input:focus, select:focus, textarea:focus { border-color: ${accent} !important; box-shadow: 0 0 0 3px ${accent}22 !important; }
+    `;
+  }
+
+  persist(entries) {
+    try { localStorage.setItem('mechanic_tracker_v1', JSON.stringify(entries)); } catch(e) {}
+    this.setState({ entries });
+  }
+
+  openNew() {
+    this.setState({ showForm: true, editId: null, showScopeSection: false, form: this.blankForm() });
+  }
+
+  openEdit(entry) {
+    this.setState({
+      showForm: true,
+      editId: entry.id,
+      form: { ...entry, parts: entry.parts && entry.parts.length ? entry.parts : [this.blankPart()] },
+      showScopeSection: !!(entry.scopeChangeDate || entry.scopeChangeNotes),
+    });
+  }
+
+  closeForm() { this.setState({ showForm: false, editId: null }); }
+
+  setField(key, val) { this.setState(s => ({ form: { ...s.form, [key]: val } })); }
+
+  setPartField(i, key, val) {
+    this.setState(s => ({
+      form: {
+        ...s.form,
+        parts: s.form.parts.map((p, idx) => idx === i ? { ...p, [key]: val } : p),
+      },
+    }));
+  }
+
+  addPart() {
+    this.setState(s => ({ form: { ...s.form, parts: [...s.form.parts, this.blankPart()] } }));
+  }
+
+  removePart(i) {
+    this.setState(s => ({ form: { ...s.form, parts: s.form.parts.filter((_, idx) => idx !== i) } }));
+  }
+
+  submit() {
+    const { form, editId, entries } = this.state;
+    if (!form.date || !form.customerName.trim()) {
+      alert('Date and Customer Name are required.');
+      return;
+    }
+    if (editId) {
+      this.persist(entries.map(e => e.id === editId ? { ...form, id: editId } : e));
+    } else {
+      this.persist([{ ...form, id: Date.now().toString() }, ...entries]);
+    }
+    this.closeForm();
+  }
+
+  deleteEntry(id) {
+    if (!confirm('Delete this entry?')) return;
+    this.persist(this.state.entries.filter(e => e.id !== id));
+  }
+
+  handleTableClick(ev) {
+    const btn = ev.target.closest('[data-action]');
+    if (!btn) return;
+    const row = btn.closest('[data-eid]');
+    const id = row && row.dataset.eid;
+    if (!id) return;
+    if (btn.dataset.action === 'edit') {
+      const entry = this.state.entries.find(e => e.id === id);
+      if (entry) this.openEdit(entry);
+    } else if (btn.dataset.action === 'delete') {
+      this.deleteEntry(id);
+    }
+  }
+
+  exportCSV() {
+    const { entries } = this.state;
+    const headers = ['Date','Vehicle Type','Make/Model','Customer Name','Project Type','Project Description','Time Spent (hrs)','Part Names','Vendors','Part Costs','Part Statuses','Receipt Refs','Work Notes','Customer Notes','Scope Change Date','Scope Change Notes'];
+    const escape = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+    const joinParts = (parts, key) => parts.map(p => p[key] || '').join(' | ');
+    const rows = [headers.join(',')];
+    entries.forEach(e => {
+      const parts = e.parts || [];
+      rows.push([
+        e.date, e.vehicleType, e.makeModel, e.customerName,
+        e.projectType, e.projectDescription, e.timeSpent,
+        joinParts(parts, 'partName'), joinParts(parts, 'vendor'),
+        joinParts(parts, 'partCost'), joinParts(parts, 'partStatus'),
+        joinParts(parts, 'receiptRef'),
+        e.workNotes, e.customerNotes, e.scopeChangeDate, e.scopeChangeNotes,
+      ].map(escape).join(','));
+    });
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.join('\n'));
+    a.download = 'work-log-' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+  }
+
+  getFiltered() {
+    const { entries, search, filterStatus, filterVehicleType, filterProject } = this.state;
+    const statusStyle = {
+      'Ordered':    { bg: '#fef3c7', color: '#92400e' },
+      'In Transit': { bg: '#dbeafe', color: '#1e40af' },
+      'Arrived':    { bg: '#d1fae5', color: '#065f46' },
+      'Installed':  { bg: '#bbf7d0', color: '#14532d' },
+      'Returned':   { bg: '#fee2e2', color: '#991b1b' },
+      'N/A':        { bg: '#f1f5f9', color: '#475569' },
+    };
+
+    let result = entries;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(e => {
+        const partText = (e.parts || []).map(p => (p.partName || '') + ' ' + (p.vendor || '')).join(' ');
+        return (e.customerName||'').toLowerCase().includes(q) ||
+          (e.makeModel||'').toLowerCase().includes(q) ||
+          (e.workNotes||'').toLowerCase().includes(q) ||
+          (e.projectDescription||'').toLowerCase().includes(q) ||
+          (e.projectType||'').toLowerCase().includes(q) ||
+          partText.toLowerCase().includes(q);
+      });
+    }
+    if (filterVehicleType) result = result.filter(e => e.vehicleType === filterVehicleType);
+    if (filterProject) result = result.filter(e => e.projectType === filterProject);
+    if (filterStatus) result = result.filter(e => (e.parts || []).some(p => p.partStatus === filterStatus));
+
+    return result.map(e => {
+      const parts = e.parts || [];
+      const totalCost = parts.reduce((s, p) => s + (parseFloat(p.partCost) || 0), 0);
+      const d = e.date ? new Date(e.date + 'T12:00:00') : null;
+      const displayParts = parts.slice(0, 3).map(p => {
+        const ss = statusStyle[p.partStatus];
+        return {
+          ...p,
+          hasName: !!p.partName,
+          hasBadge: !!ss && !!p.partStatus,
+          badgeStyle: ss ? {
+            display: 'inline-block', fontSize: '11px', fontWeight: '600',
+            padding: '2px 8px', borderRadius: '99px',
+            background: ss.bg, color: ss.color, marginTop: '2px',
+          } : null,
+        };
+      });
+      return {
+        ...e,
+        dateDisplay: d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+        timeDisplay: e.timeSpent ? e.timeSpent + 'h' : '—',
+        costDisplay: totalCost > 0 ? '$' + totalCost.toFixed(2) : '—',
+        hasScope: !!(e.scopeChangeDate || e.scopeChangeNotes),
+        partsDisplay: displayParts,
+        extraParts: Math.max(0, parts.length - 3),
+        hasExtraParts: parts.length > 3,
+      };
+    });
+  }
+
+  renderVals() {
+    const { showForm, search, filterStatus, filterVehicleType, filterProject, form, editId, showScopeSection, entries } = this.state;
+    const filtered = this.getFiltered();
+
+    const totalHours = entries.reduce((s, e) => s + (parseFloat(e.timeSpent) || 0), 0);
+    const totalCost = entries.reduce((s, e) => {
+      return s + (e.parts || []).reduce((ps, p) => ps + (parseFloat(p.partCost) || 0), 0);
+    }, 0);
+    const customers = new Set(entries.map(e => e.customerName).filter(Boolean)).size;
+    const scopeCount = entries.filter(e => e.scopeChangeDate || e.scopeChangeNotes).length;
+
+    const partItems = (form.parts || []).map((p, i) => ({
+      ...p,
+      label: (form.parts || []).length > 1 ? 'Part ' + (i + 1) : 'Part',
+      isRemovable: (form.parts || []).length > 1,
+      setPartName:   ev => this.setPartField(i, 'partName',   ev.target.value),
+      setVendor:     ev => this.setPartField(i, 'vendor',     ev.target.value),
+      setPartCost:   ev => this.setPartField(i, 'partCost',   ev.target.value),
+      setPartStatus: ev => this.setPartField(i, 'partStatus', ev.target.value),
+      setReceiptRef: ev => this.setPartField(i, 'receiptRef', ev.target.value),
+      remove: () => this.removePart(i),
+    }));
+
+    return {
+      showForm, showTable: filtered.length > 0, showEmpty: filtered.length === 0,
+      isBlank: entries.length === 0,
+      emptyHeading: entries.length === 0 ? 'No entries yet' : 'No matching entries',
+      emptySubtext: entries.length === 0
+        ? 'Log your first work session to start tracking jobs, parts, and hours.'
+        : 'Try adjusting your search or filters.',
+
+      search, filterStatus, filterVehicleType, filterProject,
+      form, editId, showScopeSection, partItems, filtered,
+      filteredCount: filtered.length,
+      totalEntries: entries.length,
+      totalHours: totalHours.toFixed(1),
+      totalCost: '$' + totalCost.toFixed(2),
+      customers, scopeCount,
+      hasScopeChanges: scopeCount > 0,
+
+      formTitle: editId ? 'Edit Entry' : 'New Entry',
+      submitLabel: editId ? 'Save Changes' : 'Log Entry',
+      scopeToggleLabel: showScopeSection ? 'Hide Scope Change' : 'Log a Scope Change',
+      scopeArrow: showScopeSection ? '▲' : '▼',
+
+      openNew: () => this.openNew(),
+      closeForm: () => this.closeForm(),
+      submit: () => this.submit(),
+      addPart: () => this.addPart(),
+      exportCSV: () => this.exportCSV(),
+      toggleScope: () => this.setState(s => ({ showScopeSection: !s.showScopeSection })),
+      tableClickHandler: ev => this.handleTableClick(ev),
+      stopProp: ev => ev.stopPropagation(),
+
+      setSearch: ev => this.setState({ search: ev.target.value }),
+      setFilterStatus: ev => this.setState({ filterStatus: ev.target.value }),
+      setFilterVehicleType: ev => this.setState({ filterVehicleType: ev.target.value }),
+      setFilterProject: ev => this.setState({ filterProject: ev.target.value }),
+
+      setDate:               ev => this.setField('date', ev.target.value),
+      setVehicleType:        ev => this.setField('vehicleType', ev.target.value),
+      setMakeModel:          ev => this.setField('makeModel', ev.target.value),
+      setCustomerName:       ev => this.setField('customerName', ev.target.value),
+      setProjectType:        ev => this.setField('projectType', ev.target.value),
+      setProjectDescription: ev => this.setField('projectDescription', ev.target.value),
+      setTimeSpent:          ev => this.setField('timeSpent', ev.target.value),
+      setWorkNotes:          ev => this.setField('workNotes', ev.target.value),
+      setCustomerNotes:      ev => this.setField('customerNotes', ev.target.value),
+      setScopeChangeDate:    ev => this.setField('scopeChangeDate', ev.target.value),
+      setScopeChangeNotes:   ev => this.setField('scopeChangeNotes', ev.target.value),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
