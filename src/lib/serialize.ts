@@ -27,7 +27,7 @@ type DbEntry = {
   customerNotes: string | null;
   scopeChangeDate: string | null;
   scopeChangeNotes: string | null;
-  customer: { name: string; phone: string | null };
+  customer: { name: string; phone: string | null; smsOptIn: string };
   parts: DbPart[];
   photos: DbPhoto[];
 };
@@ -57,6 +57,7 @@ export function serializeEntry(e: DbEntry): EntryRow {
     date: e.date,
     customerName: e.customer.name,
     customerPhone: e.customer.phone ?? "",
+    customerOptIn: e.customer.smsOptIn === "opted_in",
     vehicleType: e.vehicleType ?? "",
     makeModel: e.makeModel ?? "",
     projectType: e.projectType ?? "",

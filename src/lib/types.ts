@@ -18,6 +18,7 @@ export type EntryRow = {
   date: string;
   customerName: string;
   customerPhone: string;
+  customerOptIn: boolean;
   vehicleType: string;
   makeModel: string;
   projectType: string;
@@ -47,6 +48,7 @@ export function blankEntry(): Omit<EntryRow, "id" | "photos"> {
     date: new Date().toISOString().split("T")[0],
     customerName: "",
     customerPhone: "",
+    customerOptIn: false,
     vehicleType: "",
     makeModel: "",
     projectType: "",

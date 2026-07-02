@@ -51,6 +51,7 @@ export const entryInputSchema = z.object({
     emptyToUndefined,
     z.string().max(30).optional()
   ),
+  customerOptIn: z.boolean().optional().default(false),
   vehicleType: z.preprocess(emptyToUndefined, z.enum(vehicleTypes).optional()),
   makeModel: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
   projectType: z.preprocess(emptyToUndefined, z.enum(projectTypes).optional()),

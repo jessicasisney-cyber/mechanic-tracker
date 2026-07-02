@@ -8,7 +8,8 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 async function findOrCreateCustomer(
   tx: Tx,
   name: string,
-  phone: string | undefined
+  phone: string | undefined,
+  optedIn: boolean
 ) {
   const trimmedName = name.trim();
   const existing = await tx.query.customers.findFirst({
@@ -16,18 +17,24 @@ async function findOrCreateCustomer(
   });
 
   if (existing) {
-    if (phone && phone !== existing.phone) {
-      await tx
-        .update(customers)
-        .set({ phone })
-        .where(eq(customers.id, existing.id));
+    const updates: Partial<typeof customers.$inferInsert> = {};
+    if (phone && phone !== existing.phone) updates.phone = phone;
+    if (optedIn && existing.smsOptIn !== "opted_in") {
+      updates.smsOptIn = "opted_in";
+    }
+    if (Object.keys(updates).length > 0) {
+      await tx.update(customers).set(updates).where(eq(customers.id, existing.id));
     }
     return existing.id;
   }
 
   const [created] = await tx
     .insert(customers)
-    .values({ name: trimmedName, phone: phone || null })
+    .values({
+      name: trimmedName,
+      phone: phone || null,
+      smsOptIn: optedIn ? "opted_in" : "pending",
+    })
     .returning({ id: customers.id });
   return created.id;
 }
@@ -49,7 +56,8 @@ export async function createEntry(input: EntryInput, userId: string) {
     const customerId = await findOrCreateCustomer(
       tx,
       input.customerName,
-      input.customerPhone
+      input.customerPhone,
+      input.customerOptIn
     );
 
     const [entry] = await tx
@@ -93,7 +101,8 @@ export async function updateEntry(id: string, input: EntryInput) {
     const customerId = await findOrCreateCustomer(
       tx,
       input.customerName,
-      input.customerPhone
+      input.customerPhone,
+      input.customerOptIn
     );
 
     await tx

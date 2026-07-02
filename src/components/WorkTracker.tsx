@@ -13,6 +13,14 @@ import {
 
 type FormState = Omit<EntryRow, "id" | "photos">;
 
+type SmsMessage = {
+  id: string;
+  body: string;
+  status: "queued" | "sent" | "failed";
+  errorMessage: string | null;
+  createdAt: string;
+};
+
 async function compressImage(file: File): Promise<Blob> {
   const maxDim = 1600;
   const bitmap = await createImageBitmap(file);
@@ -84,6 +92,12 @@ export function WorkTracker({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
 
+  const [smsBody, setSmsBody] = useState("");
+  const [smsHistory, setSmsHistory] = useState<SmsMessage[]>([]);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
+  const [smsSent, setSmsSent] = useState(false);
+
   const refreshEntries = useCallback(async () => {
     try {
       const res = await fetch("/api/entries", { cache: "no-store" });
@@ -112,6 +126,10 @@ export function WorkTracker({
     setFormError(null);
     setPhotos([]);
     setPhotoError(null);
+    setSmsBody("");
+    setSmsHistory([]);
+    setSmsError(null);
+    setSmsSent(false);
     setShowForm(true);
   }
 
@@ -120,6 +138,7 @@ export function WorkTracker({
       date: entry.date,
       customerName: entry.customerName,
       customerPhone: entry.customerPhone,
+      customerOptIn: entry.customerOptIn,
       vehicleType: entry.vehicleType,
       makeModel: entry.makeModel,
       projectType: entry.projectType,
@@ -136,7 +155,47 @@ export function WorkTracker({
     setFormError(null);
     setPhotos(entry.photos);
     setPhotoError(null);
+    setSmsBody(
+      `Hi ${entry.customerName.split(" ")[0] || "there"}, this is an update on your ${
+        entry.makeModel || "vehicle"
+      }: `
+    );
+    setSmsError(null);
+    setSmsSent(false);
+    fetch(`/api/entries/${entry.id}/sms`)
+      .then((res) => (res.ok ? res.json() : { messages: [] }))
+      .then((data) => setSmsHistory(data.messages ?? []))
+      .catch(() => setSmsHistory([]));
     setShowForm(true);
+  }
+
+  async function sendSms() {
+    if (!editId || !smsBody.trim()) return;
+    setSmsSending(true);
+    setSmsError(null);
+    setSmsSent(false);
+    try {
+      const res = await fetch(`/api/entries/${editId}/sms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: smsBody.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSmsError(data.error || "Couldn't send that text.");
+        return;
+      }
+      setSmsSent(true);
+      const historyRes = await fetch(`/api/entries/${editId}/sms`);
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        setSmsHistory(historyData.messages ?? []);
+      }
+    } catch {
+      setSmsError("Couldn't send that text. Check your connection.");
+    } finally {
+      setSmsSending(false);
+    }
   }
 
   async function uploadPhoto(file: File) {
@@ -741,6 +800,20 @@ export function WorkTracker({
                 </Field>
               </div>
 
+              {form.customerPhone && (
+                <label className="-mt-2 flex items-center gap-2 text-[12px] text-[#374151]">
+                  <input
+                    type="checkbox"
+                    checked={form.customerOptIn}
+                    onChange={(e) =>
+                      setField("customerOptIn", e.target.checked)
+                    }
+                  />
+                  Customer has agreed to receive text updates about their
+                  vehicle
+                </label>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Make / Model">
                   <input
@@ -946,6 +1019,79 @@ export function WorkTracker({
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* TEXT CUSTOMER */}
+              {editId && (
+                <div className="border-t border-[#f1f5f9] pt-3">
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+                    Text Customer
+                  </div>
+                  {!form.customerPhone ? (
+                    <div className="text-[12px] text-[#94a3b8]">
+                      Add a customer phone number to send text updates.
+                    </div>
+                  ) : !form.customerOptIn ? (
+                    <div className="text-[12px] text-[#94a3b8]">
+                      Check &quot;agreed to receive text updates&quot; above to
+                      enable texting this customer.
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        value={smsBody}
+                        onChange={(e) => setSmsBody(e.target.value)}
+                        rows={2}
+                        placeholder="Type an update to text the customer…"
+                        className={`${inputClass} resize-y`}
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={sendSms}
+                          disabled={smsSending || !smsBody.trim()}
+                          className="rounded-md bg-[#2563eb] px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-60"
+                        >
+                          {smsSending ? "Sending…" : "Send Text"}
+                        </button>
+                        {smsSent && (
+                          <span className="text-[12px] font-medium text-[#059669]">
+                            Sent!
+                          </span>
+                        )}
+                      </div>
+                      {smsError && (
+                        <div className="rounded-md border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[13px] font-medium text-[#dc2626]">
+                          {smsError}
+                        </div>
+                      )}
+                      {smsHistory.length > 0 && (
+                        <div className="mt-1 flex flex-col gap-1.5">
+                          {smsHistory.map((m) => (
+                            <div
+                              key={m.id}
+                              className="rounded-md border border-[#f1f5f9] bg-[#fafafa] px-2.5 py-1.5 text-[12px]"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#374151]">{m.body}</span>
+                                <span
+                                  className={`ml-2 shrink-0 text-[10px] font-bold uppercase ${
+                                    m.status === "sent"
+                                      ? "text-[#059669]"
+                                      : m.status === "failed"
+                                      ? "text-[#dc2626]"
+                                      : "text-[#94a3b8]"
+                                  }`}
+                                >
+                                  {m.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
