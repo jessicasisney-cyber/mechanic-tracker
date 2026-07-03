@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
+const PUBLIC_PATHS = ["/login", "/privacy", "/terms"];
+
 export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isLoginPage = req.nextUrl.pathname.startsWith("/login");
+  const isPublicPage = PUBLIC_PATHS.some((p) =>
+    req.nextUrl.pathname.startsWith(p)
+  );
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isPublicPage) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
-  if (isLoggedIn && isLoginPage) {
+  if (isLoggedIn && req.nextUrl.pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("/", req.nextUrl));
   }
 });
