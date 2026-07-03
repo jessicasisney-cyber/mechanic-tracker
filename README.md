@@ -92,33 +92,34 @@ Swapping providers only means changing `src/lib/sms/provider.ts`.
 
 ## Deploying so you can use this from any device
 
-This needs a few accounts only you can create (I don't have access to set these
-up on your behalf). Once they exist, deploying is quick:
+Everything below happens in the Vercel dashboard — no separate database
+provider signup needed, since Vercel's Postgres option is Neon under the hood.
 
-1. **Push this repo to GitHub** if it isn't already (it is, if you're reading this
-   from the repo).
-2. **Create a hosted Postgres database.** [Neon](https://neon.tech) has a free
-   tier that's plenty for a single shop. Create a project, then copy its
-   connection string.
-3. **Create a Vercel account** at [vercel.com](https://vercel.com) and import
-   this GitHub repo as a new project.
-4. **Set environment variables** in the Vercel project settings (Settings →
-   Environment Variables), using the same names as `.env.example`:
-   - `DATABASE_URL` — the Neon connection string from step 2
-   - `AUTH_SECRET` — generate one with `npx auth secret`
-   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` — once you've
-     set up Twilio (see above)
-   - `BLOB_READ_WRITE_TOKEN` — create a Blob store in the same Vercel project
-     (Storage → Create Database → Blob) and it'll offer to add this for you
-     automatically
-5. **Deploy.** Vercel builds and deploys automatically on push once connected.
-6. **Run migrations against the production database** once, from your machine:
-   ```bash
-   DATABASE_URL="<your Neon connection string>" npm run db:migrate
-   DATABASE_URL="<your Neon connection string>" npm run db:seed
-   ```
-7. Visit the URL Vercel gives you from any phone, tablet, or computer — you're
-   both looking at the same live data.
+1. **Import this repo.** In Vercel, "Add New… → Project", pick this GitHub repo,
+   and set the branch to deploy to `claude/mechanic-shop-tracker-dgc5ks` (or merge
+   it to `main` first, if you'd rather deploy from there).
+2. **Add a Postgres database.** In the project, go to Storage → Create Database →
+   Postgres. This provisions it and connects it to the project automatically.
+3. **Check the database env var name.** After step 2, open Settings →
+   Environment Variables and look for the connection string Vercel added — it's
+   usually `DATABASE_URL`, but confirm it. If it's named something else (e.g.
+   `POSTGRES_URL`), either add a second variable named exactly `DATABASE_URL`
+   with the same value, or tell me the name it used and I'll adjust the code.
+4. **Add a Blob store for photos.** Storage → Create Database → Blob. This
+   automatically adds `BLOB_READ_WRITE_TOKEN` to the project.
+5. **Add the remaining environment variables** (Settings → Environment
+   Variables → Add):
+   - `AUTH_SECRET` = `+na+sAm/SKVIrRl/OsTX040vDIkoikWvWYKp8QqqMhA=`
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` — already
+     have these
+   - `SEED_OWNER_EMAIL` and `SEED_OWNER_PASSWORD` — the login you want to use
+     day one (e.g. your email + a real password). Without these, it falls back
+     to a generic placeholder login, which you don't want live.
+6. **Deploy.** Every deploy runs `drizzle-kit migrate` (applies any pending
+   database changes) and the seed script (creates your owner login if it
+   doesn't exist yet) automatically before building — nothing to run by hand.
+7. Visit the URL Vercel gives you from any phone, tablet, or computer, and log
+   in with the email/password from step 5.
 
-Let me know when you've got the accounts set up and I can walk through any of
-these steps with you, or double check the configuration once it's live.
+Tell me once it's deployed (or if any step doesn't look like what's described
+above — dashboards change) and I'll help verify it's wired up correctly.
