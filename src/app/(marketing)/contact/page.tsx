@@ -26,17 +26,6 @@ export default function ContactPage() {
           </div>
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">
-              Email
-            </div>
-            <a
-              href="mailto:jessicasisney@gmail.com"
-              className="text-lg font-semibold text-[#0f172a]"
-            >
-              jessicasisney@gmail.com
-            </a>
-          </div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">
               Location
             </div>
             <p className="text-[#374151]">Splendora, Texas</p>

@@ -89,12 +89,6 @@ export default function MarketingLayout({
             <a href="tel:+12818016752" className="hover:text-[#2563eb]">
               (281) 801-6752
             </a>
-            <a
-              href="mailto:jessicasisney@gmail.com"
-              className="hover:text-[#2563eb]"
-            >
-              jessicasisney@gmail.com
-            </a>
           </div>
           <div className="flex flex-col gap-1">
             <Link href="/privacy" className="hover:text-[#2563eb]">

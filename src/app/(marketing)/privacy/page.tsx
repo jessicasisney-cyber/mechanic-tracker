@@ -54,14 +54,7 @@ export default function PrivacyPage() {
 
       <h2 className="mb-2 mt-6 text-lg font-bold text-[#0f172a]">Contact</h2>
       <p>
-        Questions about this policy? Contact us at{" "}
-        <a
-          className="text-[#2563eb] underline"
-          href="mailto:jessicasisney@gmail.com"
-        >
-          jessicasisney@gmail.com
-        </a>{" "}
-        or (281) 801-6752.
+        Questions about this policy? Contact us at (281) 801-6752.
       </p>
     </div>
   );
