@@ -148,6 +148,19 @@ export const smsMessages = pgTable("sms_messages", {
     .defaultNow(),
 });
 
+export const customerUpdates = pgTable("customer_updates", {
+  id: id(),
+  workEntryId: text("work_entry_id")
+    .notNull()
+    .references(() => workEntries.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  trackingNumber: text("tracking_number"),
+  resolved: boolean("resolved").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const customersRelations = relations(customers, ({ many }) => ({
   workEntries: many(workEntries),
   smsMessages: many(smsMessages),
@@ -167,6 +180,17 @@ export const workEntriesRelations = relations(
     parts: many(parts),
     photos: many(photos),
     smsMessages: many(smsMessages),
+    customerUpdates: many(customerUpdates),
+  })
+);
+
+export const customerUpdatesRelations = relations(
+  customerUpdates,
+  ({ one }) => ({
+    workEntry: one(workEntries, {
+      fields: [customerUpdates.workEntryId],
+      references: [workEntries.id],
+    }),
   })
 );
 

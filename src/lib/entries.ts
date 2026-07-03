@@ -45,6 +45,7 @@ export async function listEntries() {
       customer: true,
       parts: { orderBy: [asc(parts.sortOrder)] },
       photos: { orderBy: [asc(photos.createdAt)] },
+      customerUpdates: { orderBy: (cu, { desc }) => [desc(cu.createdAt)] },
     },
     orderBy: [desc(workEntries.date), desc(workEntries.createdAt)],
   });

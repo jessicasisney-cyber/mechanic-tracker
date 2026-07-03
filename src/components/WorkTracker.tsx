@@ -11,7 +11,7 @@ import {
   type PhotoRow,
 } from "@/lib/types";
 
-type FormState = Omit<EntryRow, "id" | "photos">;
+type FormState = Omit<EntryRow, "id" | "photos" | "customerUpdates">;
 
 type SmsMessage = {
   id: string;
@@ -283,6 +283,22 @@ export function WorkTracker({
     );
   }
 
+  async function resolveCustomerUpdate(updateId: string) {
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === editId
+          ? {
+              ...e,
+              customerUpdates: e.customerUpdates.map((u) =>
+                u.id === updateId ? { ...u, resolved: true } : u
+              ),
+            }
+          : e
+      )
+    );
+    await fetch(`/api/customer-updates/${updateId}`, { method: "PATCH" });
+  }
+
   function closeForm() {
     setShowForm(false);
     setEditId(null);
@@ -377,6 +393,9 @@ export function WorkTracker({
     }
     return result;
   }, [entries, search, filterVehicleType, filterProject, filterStatus]);
+
+  const currentCustomerUpdates =
+    entries.find((e) => e.id === editId)?.customerUpdates ?? [];
 
   const totalHours = entries.reduce(
     (s, e) => s + (parseFloat(e.timeSpent) || 0),
@@ -665,6 +684,9 @@ export function WorkTracker({
                 const hasScope = !!(
                   entry.scopeChangeDate || entry.scopeChangeNotes
                 );
+                const hasUnresolvedUpdate = entry.customerUpdates.some(
+                  (u) => !u.resolved
+                );
                 return (
                   <tr key={entry.id} className="border-b border-[#f1f5f9] hover:bg-[#f0f7ff]">
                     <td className="px-4 py-2.5 align-top text-[12.5px] tabular-nums text-[#475569] whitespace-nowrap">
@@ -732,6 +754,11 @@ export function WorkTracker({
                       {cost > 0 ? `$${cost.toFixed(2)}` : "—"}
                     </td>
                     <td className="max-w-[200px] px-4 py-2.5 align-top">
+                      {hasUnresolvedUpdate && (
+                        <span className="mb-1 mr-1 inline-block rounded bg-[#dbeafe] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#1e40af]">
+                          💬 CUSTOMER UPDATE
+                        </span>
+                      )}
                       {hasScope && (
                         <span className="mb-1 inline-block rounded bg-[#fef3c7] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#92400e]">
                           ⚠ SCOPE CHANGE
@@ -1084,6 +1111,49 @@ export function WorkTracker({
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* CUSTOMER UPDATES */}
+              {currentCustomerUpdates.length > 0 && (
+                <div className="border-t border-[#f1f5f9] pt-3">
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+                    Customer Updates
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {currentCustomerUpdates.map((u) => (
+                      <div
+                        key={u.id}
+                        className={`rounded-lg border p-3 ${
+                          u.resolved
+                            ? "border-[#f1f5f9] bg-[#fafafa]"
+                            : "border-[#93c5fd] bg-[#eff6ff]"
+                        }`}
+                      >
+                        <p className="text-[13px] text-[#0f172a]">
+                          {u.message}
+                        </p>
+                        {u.trackingNumber && (
+                          <p className="mt-1 text-[12px] text-[#374151]">
+                            Tracking #: {u.trackingNumber}
+                          </p>
+                        )}
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-[11px] text-[#94a3b8]">
+                            {new Date(u.createdAt).toLocaleString()}
+                          </span>
+                          {!u.resolved && (
+                            <button
+                              onClick={() => resolveCustomerUpdate(u.id)}
+                              className="rounded-md border border-[#e2e8f0] bg-white px-2 py-1 text-[11px] font-semibold text-[#374151]"
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

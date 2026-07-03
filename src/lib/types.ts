@@ -14,6 +14,14 @@ export type PhotoRow = {
   visibleToCustomer: boolean;
 };
 
+export type CustomerUpdateRow = {
+  id: string;
+  message: string;
+  trackingNumber: string;
+  resolved: boolean;
+  createdAt: string;
+};
+
 export type EntryRow = {
   id: string;
   date: string;
@@ -31,6 +39,7 @@ export type EntryRow = {
   scopeChangeNotes: string;
   parts: PartRow[];
   photos: PhotoRow[];
+  customerUpdates: CustomerUpdateRow[];
 };
 
 export function blankPart(): PartRow {
@@ -44,7 +53,7 @@ export function blankPart(): PartRow {
   };
 }
 
-export function blankEntry(): Omit<EntryRow, "id" | "photos"> {
+export function blankEntry(): Omit<EntryRow, "id" | "photos" | "customerUpdates"> {
   return {
     date: new Date().toISOString().split("T")[0],
     customerName: "",

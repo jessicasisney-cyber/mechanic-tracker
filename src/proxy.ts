@@ -3,7 +3,12 @@ import { auth } from "@/auth";
 
 // Only these paths require login - the rest of the site (marketing pages,
 // the customer tracking link, contact form) is intentionally public.
-const PROTECTED_PATHS = ["/app", "/api/entries", "/api/photos"];
+const PROTECTED_PATHS = [
+  "/app",
+  "/api/entries",
+  "/api/photos",
+  "/api/customer-updates",
+];
 
 export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;

@@ -1,4 +1,4 @@
-import type { EntryRow, PartRow, PhotoRow } from "./types";
+import type { CustomerUpdateRow, EntryRow, PartRow, PhotoRow } from "./types";
 
 type DbPart = {
   id: string;
@@ -16,6 +16,14 @@ type DbPhoto = {
   visibleToCustomer: boolean;
 };
 
+type DbCustomerUpdate = {
+  id: string;
+  message: string;
+  trackingNumber: string | null;
+  resolved: boolean;
+  createdAt: Date;
+};
+
 type DbEntry = {
   id: string;
   date: string;
@@ -31,6 +39,7 @@ type DbEntry = {
   customer: { name: string; phone: string | null; smsOptIn: string };
   parts: DbPart[];
   photos: DbPhoto[];
+  customerUpdates: DbCustomerUpdate[];
 };
 
 function serializePart(p: DbPart): PartRow {
@@ -53,6 +62,16 @@ function serializePhoto(p: DbPhoto): PhotoRow {
   };
 }
 
+function serializeCustomerUpdate(u: DbCustomerUpdate): CustomerUpdateRow {
+  return {
+    id: u.id,
+    message: u.message,
+    trackingNumber: u.trackingNumber ?? "",
+    resolved: u.resolved,
+    createdAt: u.createdAt.toISOString(),
+  };
+}
+
 export function serializeEntry(e: DbEntry): EntryRow {
   return {
     id: e.id,
@@ -71,5 +90,6 @@ export function serializeEntry(e: DbEntry): EntryRow {
     scopeChangeNotes: e.scopeChangeNotes ?? "",
     parts: e.parts.map(serializePart),
     photos: e.photos.map(serializePhoto),
+    customerUpdates: e.customerUpdates.map(serializeCustomerUpdate),
   };
 }
