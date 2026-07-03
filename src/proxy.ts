@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-const PUBLIC_PATHS = ["/login", "/privacy", "/terms"];
+// Only these paths require login - the rest of the site (marketing pages,
+// the customer tracking link, contact form) is intentionally public.
+const PROTECTED_PATHS = ["/app", "/api/entries", "/api/photos"];
 
 export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isPublicPage = PUBLIC_PATHS.some((p) =>
-    req.nextUrl.pathname.startsWith(p)
-  );
+  const path = req.nextUrl.pathname;
+  const isProtected = PROTECTED_PATHS.some((p) => path.startsWith(p));
 
-  if (!isLoggedIn && !isPublicPage) {
+  if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
-  if (isLoggedIn && req.nextUrl.pathname.startsWith("/login")) {
-    return NextResponse.redirect(new URL("/", req.nextUrl));
+  if (isLoggedIn && path.startsWith("/login")) {
+    return NextResponse.redirect(new URL("/app", req.nextUrl));
   }
 });
 

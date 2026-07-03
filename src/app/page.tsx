@@ -1,20 +1,11 @@
-import { auth } from "@/auth";
-import { listEntries } from "@/lib/entries";
-import { serializeEntry } from "@/lib/serialize";
-import { WorkTracker } from "@/components/WorkTracker";
-
-export default async function Home() {
-  const session = await auth();
-  const rows = await listEntries();
-  const entries = rows.map(serializeEntry);
-
+export default function HomePage() {
   return (
-    <WorkTracker
-      initialEntries={entries}
-      currentUser={{
-        name: session!.user.name ?? "",
-        role: session!.user.role,
-      }}
-    />
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f1f5f9] px-6 text-center">
+      <h1 className="text-3xl font-bold text-[#0f172a]">RS Autoworks</h1>
+      <p className="text-[#64748b]">Public site coming next.</p>
+      <a href="/login" className="text-sm text-[#2563eb] underline">
+        Staff login
+      </a>
+    </div>
   );
 }
