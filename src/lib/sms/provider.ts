@@ -34,11 +34,20 @@ class TwilioProvider implements SmsProvider {
       }
     );
 
-    const data = await res.json();
+    const raw = await res.text();
+    let data: { message?: string; sid?: string } = {};
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error(
+        `Twilio returned an unexpected response (${res.status}). Try again in a moment.`
+      );
+    }
+
     if (!res.ok) {
       throw new Error(data.message || `Twilio error (${res.status})`);
     }
-    return { providerMessageId: data.sid };
+    return { providerMessageId: data.sid! };
   }
 }
 
