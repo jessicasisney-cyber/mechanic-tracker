@@ -169,6 +169,12 @@ export function WorkTracker({
     setShowForm(true);
   }
 
+  function attachPhotoToText(photo: PhotoRow) {
+    setSmsBody((prev) =>
+      prev.includes(photo.url) ? prev : `${prev.trim()}\n${photo.url}`.trim()
+    );
+  }
+
   async function sendSms() {
     if (!editId || !smsBody.trim()) return;
     setSmsSending(true);
@@ -1010,6 +1016,15 @@ export function WorkTracker({
                         alt={photo.caption || "Job photo"}
                         className="aspect-square w-full rounded-lg border border-[#e2e8f0] object-cover"
                       />
+                      {form.customerPhone && form.customerOptIn && (
+                        <button
+                          onClick={() => attachPhotoToText(photo)}
+                          title="Attach this photo's link to the text message below"
+                          className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-[12px] leading-none text-white"
+                        >
+                          📎
+                        </button>
+                      )}
                       <button
                         onClick={() => deletePhoto(photo.id)}
                         title="Remove photo"
@@ -1039,6 +1054,11 @@ export function WorkTracker({
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
+                      {photos.length > 0 && (
+                        <div className="text-[11px] text-[#94a3b8]">
+                          Tip: click 📎 on a photo above to add its link here
+                        </div>
+                      )}
                       <textarea
                         value={smsBody}
                         onChange={(e) => setSmsBody(e.target.value)}
