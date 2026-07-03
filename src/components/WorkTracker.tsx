@@ -248,6 +248,41 @@ export function WorkTracker({
     );
   }
 
+  async function togglePhotoVisibility(photo: PhotoRow) {
+    const nextValue = !photo.visibleToCustomer;
+    setPhotos((prev) =>
+      prev.map((p) =>
+        p.id === photo.id ? { ...p, visibleToCustomer: nextValue } : p
+      )
+    );
+    const res = await fetch(`/api/photos/${photo.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibleToCustomer: nextValue }),
+    });
+    if (!res.ok) {
+      // revert on failure
+      setPhotos((prev) =>
+        prev.map((p) =>
+          p.id === photo.id ? { ...p, visibleToCustomer: !nextValue } : p
+        )
+      );
+      return;
+    }
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === editId
+          ? {
+              ...e,
+              photos: e.photos.map((p) =>
+                p.id === photo.id ? { ...p, visibleToCustomer: nextValue } : p
+              ),
+            }
+          : e
+      )
+    );
+  }
+
   function closeForm() {
     setShowForm(false);
     setEditId(null);
@@ -1009,28 +1044,43 @@ export function WorkTracker({
               {photos.length > 0 && (
                 <div className="grid grid-cols-3 gap-2.5">
                   {photos.map((photo) => (
-                    <div key={photo.id} className="group relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.url}
-                        alt={photo.caption || "Job photo"}
-                        className="aspect-square w-full rounded-lg border border-[#e2e8f0] object-cover"
-                      />
-                      {form.customerPhone && form.customerOptIn && (
+                    <div key={photo.id} className="flex flex-col gap-1.5">
+                      <div className="group relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo.url}
+                          alt={photo.caption || "Job photo"}
+                          className="aspect-square w-full rounded-lg border border-[#e2e8f0] object-cover"
+                        />
+                        {form.customerPhone && form.customerOptIn && (
+                          <button
+                            onClick={() => attachPhotoToText(photo)}
+                            title="Attach this photo's link to the text message below"
+                            className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-[12px] leading-none text-white"
+                          >
+                            📎
+                          </button>
+                        )}
                         <button
-                          onClick={() => attachPhotoToText(photo)}
-                          title="Attach this photo's link to the text message below"
-                          className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-[12px] leading-none text-white"
+                          onClick={() => deletePhoto(photo.id)}
+                          title="Remove photo"
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-[14px] leading-none text-white"
                         >
-                          📎
+                          ×
                         </button>
-                      )}
+                      </div>
                       <button
-                        onClick={() => deletePhoto(photo.id)}
-                        title="Remove photo"
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-[14px] leading-none text-white"
+                        onClick={() => togglePhotoVisibility(photo)}
+                        title="Customers can see photos marked shared on their tracking page"
+                        className={`rounded-md px-1.5 py-1 text-center text-[10px] font-semibold leading-tight ${
+                          photo.visibleToCustomer
+                            ? "bg-[#dbeafe] text-[#1e40af]"
+                            : "bg-[#f1f5f9] text-[#64748b]"
+                        }`}
                       >
-                        ×
+                        {photo.visibleToCustomer
+                          ? "✓ Shared with customer"
+                          : "Internal only"}
                       </button>
                     </div>
                   ))}

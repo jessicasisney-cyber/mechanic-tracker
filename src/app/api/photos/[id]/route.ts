@@ -6,6 +6,32 @@ import { db } from "@/db";
 import { photos } from "@/db/schema";
 import { isBlobConfigured } from "@/lib/storage";
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const { visibleToCustomer } = await request.json();
+  if (typeof visibleToCustomer !== "boolean") {
+    return NextResponse.json(
+      { error: "visibleToCustomer must be a boolean" },
+      { status: 400 }
+    );
+  }
+
+  await db
+    .update(photos)
+    .set({ visibleToCustomer })
+    .where(eq(photos.id, id));
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }

@@ -4,6 +4,7 @@ import {
   timestamp,
   numeric,
   integer,
+  boolean,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -120,6 +121,7 @@ export const photos = pgTable("photos", {
     .references(() => workEntries.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
   caption: text("caption"),
+  visibleToCustomer: boolean("visible_to_customer").notNull().default(false),
   uploadedBy: text("uploaded_by").references(() => users.id, {
     onDelete: "set null",
   }),

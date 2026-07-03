@@ -1,0 +1,1 @@
+ALTER TABLE "photos" ADD COLUMN "visible_to_customer" boolean DEFAULT false NOT NULL;

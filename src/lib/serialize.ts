@@ -13,6 +13,7 @@ type DbPhoto = {
   id: string;
   url: string;
   caption: string | null;
+  visibleToCustomer: boolean;
 };
 
 type DbEntry = {
@@ -48,6 +49,7 @@ function serializePhoto(p: DbPhoto): PhotoRow {
     id: p.id,
     url: p.url,
     caption: p.caption ?? "",
+    visibleToCustomer: p.visibleToCustomer,
   };
 }
 

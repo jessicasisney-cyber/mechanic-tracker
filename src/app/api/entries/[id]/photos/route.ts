@@ -73,7 +73,14 @@ export async function POST(
     .returning();
 
   return NextResponse.json(
-    { photo: { id: photo.id, url: photo.url, caption: photo.caption ?? "" } },
+    {
+      photo: {
+        id: photo.id,
+        url: photo.url,
+        caption: photo.caption ?? "",
+        visibleToCustomer: photo.visibleToCustomer,
+      },
+    },
     { status: 201 }
   );
 }

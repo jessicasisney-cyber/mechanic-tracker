@@ -11,6 +11,7 @@ export type PhotoRow = {
   id: string;
   url: string;
   caption: string;
+  visibleToCustomer: boolean;
 };
 
 export type EntryRow = {
