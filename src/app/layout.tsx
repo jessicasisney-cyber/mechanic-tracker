@@ -12,9 +12,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = "https://mechanic-tracker.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Mechanic Work Tracker",
-  description: "Job, parts, and customer tracker for the shop",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "RS Autoworks — Auto Repair in Splendora, TX",
+    template: "%s | RS Autoworks",
+  },
+  description:
+    "By-appointment auto repair, maintenance, diagnostics, and custom builds in Splendora, Texas.",
+  openGraph: {
+    siteName: "RS Autoworks",
+    type: "website",
+    locale: "en_US",
+  },
 };
 
 export default function RootLayout({

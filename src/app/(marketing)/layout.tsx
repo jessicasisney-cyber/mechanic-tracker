@@ -1,5 +1,22 @@
 import Link from "next/link";
 
+const LOCAL_BUSINESS_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "AutoRepair",
+  name: "RS Autoworks",
+  description:
+    "By-appointment auto repair, maintenance, diagnostics, and custom builds in Splendora, Texas.",
+  telephone: "+12818016752",
+  email: "rsautoworks8675@gmail.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Splendora",
+    addressRegion: "TX",
+    addressCountry: "US",
+  },
+  url: "https://mechanic-tracker.vercel.app",
+};
+
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
@@ -32,6 +49,12 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(LOCAL_BUSINESS_JSON_LD),
+        }}
+      />
       <header className="border-b border-[#e2e8f0] bg-[#0f172a]">
         <div className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
           <Link href="/" className="flex items-center gap-2 text-white">
@@ -88,6 +111,12 @@ export default function MarketingLayout({
           <div className="flex flex-col gap-1">
             <a href="tel:+12818016752" className="hover:text-[#2563eb]">
               (281) 801-6752
+            </a>
+            <a
+              href="mailto:rsautoworks8675@gmail.com"
+              className="hover:text-[#2563eb]"
+            >
+              rsautoworks8675@gmail.com
             </a>
           </div>
           <div className="flex flex-col gap-1">

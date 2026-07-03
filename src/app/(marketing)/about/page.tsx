@@ -1,4 +1,10 @@
-export const metadata = { title: "About — RS Autoworks" };
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Meet RS Autoworks, a small appointment-only auto repair shop in Splendora, Texas.",
+};
 
 export default function AboutPage() {
   return (

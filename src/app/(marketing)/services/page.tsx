@@ -1,6 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
-export const metadata = { title: "Services — RS Autoworks" };
+export const metadata: Metadata = {
+  title: "Services",
+  description:
+    "Repair, maintenance, diagnostics, custom builds, and inspections — by appointment in Splendora, Texas.",
+};
 
 const SERVICES = [
   {

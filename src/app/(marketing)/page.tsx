@@ -1,6 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
-export const metadata = { title: "RS Autoworks — Splendora, TX" };
+export const metadata: Metadata = {
+  title: "Auto Repair in Splendora, TX",
+  description:
+    "By-appointment auto repair, maintenance, diagnostics, and custom builds in Splendora, Texas. Text updates keep you in the loop on your vehicle.",
+};
 
 function CalendarIcon() {
   return (

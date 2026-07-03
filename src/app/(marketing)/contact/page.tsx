@@ -1,6 +1,11 @@
 import { ContactForm } from "./ContactForm";
+import type { Metadata } from "next";
 
-export const metadata = { title: "Contact — RS Autoworks" };
+export const metadata: Metadata = {
+  title: "Contact",
+  description:
+    "Schedule an appointment with RS Autoworks in Splendora, Texas. By appointment only.",
+};
 
 export default function ContactPage() {
   return (
@@ -22,6 +27,17 @@ export default function ContactPage() {
               className="text-lg font-semibold text-[#0f172a]"
             >
               (281) 801-6752
+            </a>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">
+              Email
+            </div>
+            <a
+              href="mailto:rsautoworks8675@gmail.com"
+              className="text-lg font-semibold text-[#0f172a]"
+            >
+              rsautoworks8675@gmail.com
             </a>
           </div>
           <div>

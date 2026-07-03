@@ -1,4 +1,9 @@
-export const metadata = { title: "Terms & Text Messaging Program — RS Autoworks" };
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms & Text Messaging Program",
+  robots: { index: false, follow: true },
+};
 
 export default function TermsPage() {
   return (
@@ -46,7 +51,14 @@ export default function TermsPage() {
       </h2>
       <p className="mb-4">
         Reply <strong>HELP</strong> to any message for assistance, or contact
-        us directly at (281) 801-6752.
+        us directly at{" "}
+        <a
+          className="text-[#2563eb] underline"
+          href="mailto:rsautoworks8675@gmail.com"
+        >
+          rsautoworks8675@gmail.com
+        </a>{" "}
+        or (281) 801-6752.
       </p>
 
       <h2 className="mb-2 mt-6 text-lg font-bold text-[#0f172a]">
