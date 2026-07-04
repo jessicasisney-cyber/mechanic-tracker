@@ -962,6 +962,13 @@ export function WorkTracker({
                 </button>
               </div>
 
+              {form.customerPhone && form.customerOptIn && (
+                <div className="-mt-1 text-[11px] text-[#94a3b8]">
+                  Changing a part's status to In Transit, Arrived, or
+                  Installed automatically texts the customer.
+                </div>
+              )}
+
               {form.parts.map((item, i) => (
                 <div
                   key={i}

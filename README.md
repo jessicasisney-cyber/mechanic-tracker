@@ -15,8 +15,8 @@ private link to check their own job status — all synced across every device.
 - [x] Contact form and customer-update notifications via email (Resend)
 - [x] SEO basics: sitemap, robots.txt, structured data, meta descriptions
 - [x] Deployed to Vercel
-- [ ] Auto-text customers automatically when a part's status changes (currently
-      texting is manual, triggered by clicking "Send Text")
+- [x] Auto-texts a customer when a part's status changes to In Transit,
+      Arrived, or Installed (manual "Send Text" still works for anything else)
 
 ## Site map
 
@@ -98,6 +98,13 @@ things to remember:
 - Every text attempt (sent or failed) is logged in the `sms_messages` table.
 - Twilio isn't the only option — Telnyx and Plivo are similar and sometimes
   cheaper. Swapping providers only means changing `src/lib/sms/provider.ts`.
+
+**Automatic texts:** changing a part's status to **In Transit**, **Arrived**,
+or **Installed** automatically texts the customer (if opted in) with that
+part's new status — no button to click. This compares the part's name against
+its previous status on save, so it only fires on an actual change, not every
+save. Statuses like Ordered, Returned, or N/A don't trigger a text, since
+they're less meaningful to a customer waiting on their vehicle.
 
 ## Turning on the contact form / customer-update emails
 

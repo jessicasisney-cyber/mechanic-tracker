@@ -2,6 +2,13 @@ import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { customers, parts, photos, workEntries } from "@/db/schema";
 import type { EntryInput } from "./entry-schema";
+import { sendSmsForEntry } from "./sms/send";
+
+const NOTABLE_STATUS_CHANGES = new Set(["In Transit", "Arrived", "Installed"]);
+
+function normalizePartName(name: string | null | undefined) {
+  return (name ?? "").trim().toLowerCase();
+}
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -98,7 +105,14 @@ export async function createEntry(input: EntryInput, userId: string) {
 }
 
 export async function updateEntry(id: string, input: EntryInput) {
-  return db.transaction(async (tx) => {
+  const existingParts = await db.query.parts.findMany({
+    where: eq(parts.workEntryId, id),
+  });
+  const oldStatusByName = new Map(
+    existingParts.map((p) => [normalizePartName(p.partName), p.partStatus])
+  );
+
+  await db.transaction(async (tx) => {
     const customerId = await findOrCreateCustomer(
       tx,
       input.customerName,
@@ -140,6 +154,27 @@ export async function updateEntry(id: string, input: EntryInput) {
       );
     }
   });
+
+  const changedParts = input.parts.filter((p) => {
+    if (!p.partName || !p.partStatus) return false;
+    if (!NOTABLE_STATUS_CHANGES.has(p.partStatus)) return false;
+    const oldStatus = oldStatusByName.get(normalizePartName(p.partName));
+    return oldStatus !== p.partStatus;
+  });
+
+  if (changedParts.length > 0) {
+    const summary = changedParts
+      .map((p) => `${p.partName}: ${p.partStatus}`)
+      .join("; ");
+    const vehicle = input.makeModel || "vehicle";
+    const message = `Hi ${input.customerName.split(" ")[0]}, update on your ${vehicle} — ${summary}.`;
+    try {
+      await sendSmsForEntry(id, message);
+    } catch {
+      // Auto-text is a convenience, not a save requirement - opt-out,
+      // missing phone, and unconfigured Twilio all throw here silently.
+    }
+  }
 }
 
 export async function deleteEntry(id: string) {
