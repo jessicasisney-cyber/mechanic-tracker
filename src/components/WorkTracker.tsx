@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { logout } from "@/app/actions";
 import { vehicleTypes, projectTypes, partStatuses } from "@/lib/entry-schema";
 import {
@@ -498,9 +499,15 @@ export function WorkTracker({
         <span className="text-[12px] text-[#94a3b8]">
           {currentUser.name}
         </span>
+        <Link
+          href="/app/testimonials"
+          className="rounded-md border border-[#334155] px-3 py-1.5 text-[12px] font-medium text-[#94a3b8]"
+        >
+          Testimonials
+        </Link>
         <button
           onClick={exportCSV}
-          className="rounded-md border border-[#334155] px-3 py-1.5 text-[12px] font-medium text-[#94a3b8]"
+          className="ml-1 rounded-md border border-[#334155] px-3 py-1.5 text-[12px] font-medium text-[#94a3b8]"
         >
           Export CSV
         </button>

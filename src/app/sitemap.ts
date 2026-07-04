@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 const baseUrl = "https://mechanic-tracker.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/services", "/about", "/contact"];
+  const routes = ["", "/services", "/testimonials", "/about", "/contact"];
   return routes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),

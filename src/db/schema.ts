@@ -50,6 +50,17 @@ function id() {
     .$defaultFn(() => crypto.randomUUID());
 }
 
+export const testimonials = pgTable("testimonials", {
+  id: id(),
+  customerName: text("customer_name").notNull(),
+  quote: text("quote").notNull(),
+  rating: integer("rating"),
+  published: boolean("published").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: id(),
   name: text("name").notNull(),

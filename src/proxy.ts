@@ -8,6 +8,7 @@ const PROTECTED_PATHS = [
   "/api/entries",
   "/api/photos",
   "/api/customer-updates",
+  "/api/testimonials",
 ];
 
 export const proxy = auth((req) => {

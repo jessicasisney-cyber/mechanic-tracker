@@ -1,11 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getPublishedTestimonials } from "@/lib/testimonials";
 
 export const metadata: Metadata = {
   title: "Auto Repair in Splendora, TX",
   description:
     "By-appointment auto repair, maintenance, diagnostics, and custom builds in Splendora, Texas. Text updates keep you in the loop on your vehicle.",
 };
+
+// Testimonials are managed live in /app/testimonials - refresh periodically
+// so a newly added one shows up without needing a new deploy.
+export const revalidate = 60;
 
 function CalendarIcon() {
   return (
@@ -53,6 +58,47 @@ function BuildIcon() {
     </svg>
   );
 }
+function LinkIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+function BellIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </svg>
+  );
+}
+function HeartHandshakeIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 14c1.5-1.5 3-3.4 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5C2 12 5 15 12 21c1.5-1.34 2.83-2.53 4-3.62" />
+    </svg>
+  );
+}
+
+const DIFFERENTIATORS = [
+  {
+    icon: LinkIcon,
+    title: "Track Your Job Anytime",
+    desc: "Every job gets a private link showing real-time status, parts, and photos — check from your phone, no calling needed.",
+  },
+  {
+    icon: BellIcon,
+    title: "Automatic Text Updates",
+    desc: "The moment a part arrives or your vehicle's status changes, you get a text — not radio silence until pickup day.",
+  },
+  {
+    icon: HeartHandshakeIcon,
+    title: "Straightforward Communication",
+    desc: "We explain what's actually wrong with your vehicle in plain terms, so you can make a real decision — not just take our word for it.",
+  },
+];
 
 const SERVICES = [
   { icon: ShieldIcon, title: "Repair & Maintenance", desc: "From routine service to unexpected repairs, we keep your vehicle running right." },
@@ -60,7 +106,9 @@ const SERVICES = [
   { icon: BuildIcon, title: "Custom Builds", desc: "Custom project work for owners who want something built their way." },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const testimonials = await getPublishedTestimonials(2);
+
   return (
     <div>
       {/* HERO */}
@@ -150,8 +198,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* WHY US */}
+      {/* WHAT SETS US APART */}
       <section className="bg-[#f8fafc] px-6 py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#2563eb]">
+              What sets us apart
+            </span>
+            <h2 className="mt-2 text-3xl font-bold text-[#0f172a]">
+              A different kind of shop experience
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {DIFFERENTIATORS.map((d) => (
+              <div key={d.title} className="rounded-2xl bg-white p-7 shadow-sm">
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#eff6ff] text-[#2563eb]">
+                  <d.icon />
+                </div>
+                <h3 className="mt-5 font-bold text-[#0f172a]">{d.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#64748b]">
+                  {d.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WHY US */}
+      <section className="px-6 py-20">
         <div className="mx-auto grid max-w-5xl items-center gap-10 sm:grid-cols-2">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#2563eb]">
@@ -184,6 +259,51 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* TESTIMONIALS */}
+      {testimonials.length > 0 && (
+        <section className="bg-[#f8fafc] px-6 py-20">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#2563eb]">
+                What customers say
+              </span>
+              <h2 className="mt-2 text-3xl font-bold text-[#0f172a]">
+                Don't just take our word for it
+              </h2>
+            </div>
+            <div className="mt-10 grid gap-6 sm:grid-cols-2">
+              {testimonials.map((t) => (
+                <div
+                  key={t.id}
+                  className="rounded-2xl border border-[#e2e8f0] bg-white p-7"
+                >
+                  {t.rating && (
+                    <div className="text-[#f59e0b]">
+                      {"★".repeat(t.rating)}
+                      {"☆".repeat(5 - t.rating)}
+                    </div>
+                  )}
+                  <p className="mt-2 text-[15px] leading-relaxed text-[#374151]">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <p className="mt-3 text-sm font-semibold text-[#0f172a]">
+                    {t.customerName}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 text-center">
+              <Link
+                href="/testimonials"
+                className="text-sm font-semibold text-[#2563eb] underline underline-offset-4"
+              >
+                Read more testimonials →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* LOCATION / CTA */}
       <section className="relative overflow-hidden bg-[#0f172a] px-6 py-20 text-center text-white">
