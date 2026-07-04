@@ -59,6 +59,16 @@ export async function listEntries() {
   return rows;
 }
 
+export async function getEntry(id: string) {
+  return db.query.workEntries.findFirst({
+    where: eq(workEntries.id, id),
+    with: {
+      customer: true,
+      parts: { orderBy: [asc(parts.sortOrder)] },
+    },
+  });
+}
+
 export async function createEntry(input: EntryInput, userId: string) {
   return db.transaction(async (tx) => {
     const customerId = await findOrCreateCustomer(
@@ -79,6 +89,8 @@ export async function createEntry(input: EntryInput, userId: string) {
         projectType: input.projectType,
         projectDescription: input.projectDescription,
         timeSpent: input.timeSpent?.toString(),
+        laborRateType: input.laborRateType,
+        laborRate: input.laborRate?.toString(),
         workNotes: input.workNotes,
         customerNotes: input.customerNotes,
         scopeChangeDate: input.scopeChangeDate,
@@ -130,6 +142,8 @@ export async function updateEntry(id: string, input: EntryInput) {
         projectType: input.projectType,
         projectDescription: input.projectDescription,
         timeSpent: input.timeSpent?.toString() ?? null,
+        laborRateType: input.laborRateType,
+        laborRate: input.laborRate?.toString() ?? null,
         workNotes: input.workNotes,
         customerNotes: input.customerNotes,
         scopeChangeDate: input.scopeChangeDate,

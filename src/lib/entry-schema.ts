@@ -27,6 +27,8 @@ export const partStatuses = [
   "N/A",
 ] as const;
 
+export const laborRateTypes = ["standard", "specialty"] as const;
+
 const emptyToUndefined = (val: unknown) =>
   typeof val === "string" && val.trim() === "" ? undefined : val;
 
@@ -60,6 +62,11 @@ export const entryInputSchema = z.object({
     z.string().max(2000).optional()
   ),
   timeSpent: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().min(0).max(1000).optional()
+  ),
+  laborRateType: z.enum(laborRateTypes).default("standard"),
+  laborRate: z.preprocess(
     emptyToUndefined,
     z.coerce.number().min(0).max(1000).optional()
   ),

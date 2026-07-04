@@ -17,6 +17,13 @@ private link to check their own job status — all synced across every device.
 - [x] Deployed to Vercel
 - [x] Auto-texts a customer when a part's status changes to In Transit,
       Arrived, or Installed (manual "Send Text" still works for anything else)
+- [x] Testimonials (`/app/testimonials` to manage, public on `/testimonials`
+      and the homepage) and a "What Sets Us Apart" homepage section
+- [x] Invoicing: shop-wide labor rates and sales tax rate (`/app/settings`),
+      per-job Standard/Classic-Specialty rate selection, and a printable
+      invoice (`/app/invoice/[job-id]`) with labor and parts as separate line
+      items - Texas doesn't tax labor on vehicle repairs, only parts, so this
+      is a legal requirement, not just a formatting choice
 
 ## Site map
 

@@ -33,6 +33,8 @@ export type EntryRow = {
   projectType: string;
   projectDescription: string;
   timeSpent: string;
+  laborRateType: "standard" | "specialty";
+  laborRate: string;
   workNotes: string;
   customerNotes: string;
   scopeChangeDate: string;
@@ -64,6 +66,8 @@ export function blankEntry(): Omit<EntryRow, "id" | "photos" | "customerUpdates"
     projectType: "",
     projectDescription: "",
     timeSpent: "",
+    laborRateType: "standard",
+    laborRate: "",
     workNotes: "",
     customerNotes: "",
     scopeChangeDate: "",

@@ -73,9 +73,11 @@ function escapeCsv(v: string | number | undefined) {
 export function WorkTracker({
   initialEntries,
   currentUser,
+  laborRates,
 }: {
   initialEntries: EntryRow[];
   currentUser: { name: string; role: string };
+  laborRates: { standard: string; specialtyMin: string; specialtyMax: string };
 }) {
   const [entries, setEntries] = useState<EntryRow[]>(initialEntries);
   const [search, setSearch] = useState("");
@@ -130,7 +132,11 @@ export function WorkTracker({
   }, [refreshEntries]);
 
   function openNew() {
-    setForm(blankEntry());
+    setForm({
+      ...blankEntry(),
+      laborRateType: "standard",
+      laborRate: laborRates.standard,
+    });
     setEditId(null);
     setShowScopeSection(false);
     setFormError(null);
@@ -154,6 +160,8 @@ export function WorkTracker({
       projectType: entry.projectType,
       projectDescription: entry.projectDescription,
       timeSpent: entry.timeSpent,
+      laborRateType: entry.laborRateType,
+      laborRate: entry.laborRate || laborRates.standard,
       workNotes: entry.workNotes,
       customerNotes: entry.customerNotes,
       scopeChangeDate: entry.scopeChangeDate,
@@ -500,8 +508,14 @@ export function WorkTracker({
           {currentUser.name}
         </span>
         <Link
-          href="/app/testimonials"
+          href="/app/settings"
           className="rounded-md border border-[#334155] px-3 py-1.5 text-[12px] font-medium text-[#94a3b8]"
+        >
+          Settings
+        </Link>
+        <Link
+          href="/app/testimonials"
+          className="ml-1 rounded-md border border-[#334155] px-3 py-1.5 text-[12px] font-medium text-[#94a3b8]"
         >
           Testimonials
         </Link>
@@ -825,12 +839,22 @@ export function WorkTracker({
               </div>
               <div className="flex-1" />
               {editId && (
-                <button
-                  onClick={() => copyTrackingLink(editId)}
-                  className="mr-2 rounded-md border border-[#e2e8f0] bg-white px-2.5 py-1 text-[12px] font-semibold text-[#2563eb]"
-                >
-                  {linkCopied ? "Copied!" : "Copy Customer Link"}
-                </button>
+                <>
+                  <a
+                    href={`/app/invoice/${editId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mr-2 rounded-md border border-[#e2e8f0] bg-white px-2.5 py-1 text-[12px] font-semibold text-[#374151]"
+                  >
+                    View Invoice
+                  </a>
+                  <button
+                    onClick={() => copyTrackingLink(editId)}
+                    className="mr-2 rounded-md border border-[#e2e8f0] bg-white px-2.5 py-1 text-[12px] font-semibold text-[#2563eb]"
+                  >
+                    {linkCopied ? "Copied!" : "Copy Customer Link"}
+                  </button>
+                </>
               )}
               <button
                 onClick={closeForm}
@@ -932,17 +956,57 @@ export function WorkTracker({
                 </Field>
               </div>
 
-              <Field label="Time Spent (hrs)">
-                <input
-                  type="number"
-                  value={form.timeSpent}
-                  onChange={(e) => setField("timeSpent", e.target.value)}
-                  placeholder="0.0"
-                  step="0.25"
-                  min="0"
-                  className={inputClass}
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Time Spent (hrs)">
+                  <input
+                    type="number"
+                    value={form.timeSpent}
+                    onChange={(e) => setField("timeSpent", e.target.value)}
+                    placeholder="0.0"
+                    step="0.25"
+                    min="0"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Labor Rate">
+                  <select
+                    value={form.laborRateType}
+                    onChange={(e) => {
+                      const type = e.target.value as "standard" | "specialty";
+                      setField("laborRateType", type);
+                      setField(
+                        "laborRate",
+                        type === "standard"
+                          ? laborRates.standard
+                          : laborRates.specialtyMin
+                      );
+                    }}
+                    className={inputClass}
+                  >
+                    <option value="standard">
+                      Standard (${laborRates.standard}/hr)
+                    </option>
+                    <option value="specialty">
+                      Classic/Specialty (${laborRates.specialtyMin}–$
+                      {laborRates.specialtyMax}/hr)
+                    </option>
+                  </select>
+                </Field>
+              </div>
+
+              {form.laborRateType === "specialty" && (
+                <Field label={`Specialty Rate ($${laborRates.specialtyMin}–$${laborRates.specialtyMax}/hr)`}>
+                  <input
+                    type="number"
+                    value={form.laborRate}
+                    onChange={(e) => setField("laborRate", e.target.value)}
+                    step="1"
+                    min={laborRates.specialtyMin}
+                    max={laborRates.specialtyMax}
+                    className={inputClass}
+                  />
+                </Field>
+              )}
 
               <Field label="Project Description / Scope">
                 <textarea

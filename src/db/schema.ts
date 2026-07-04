@@ -44,11 +44,45 @@ export const smsStatusEnum = pgEnum("sms_status", [
   "failed",
 ]);
 
+export const laborRateTypeEnum = pgEnum("labor_rate_type", [
+  "standard",
+  "specialty",
+]);
+
 function id() {
   return text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID());
 }
+
+// Singleton row (id is always "default") holding shop-wide billing settings.
+export const shopSettings = pgTable("shop_settings", {
+  id: text("id").primaryKey().default("default"),
+  standardLaborRate: numeric("standard_labor_rate", {
+    precision: 8,
+    scale: 2,
+  })
+    .notNull()
+    .default("125.00"),
+  specialtyLaborRateMin: numeric("specialty_labor_rate_min", {
+    precision: 8,
+    scale: 2,
+  })
+    .notNull()
+    .default("100.00"),
+  specialtyLaborRateMax: numeric("specialty_labor_rate_max", {
+    precision: 8,
+    scale: 2,
+  })
+    .notNull()
+    .default("175.00"),
+  salesTaxRate: numeric("sales_tax_rate", { precision: 5, scale: 4 })
+    .notNull()
+    .default("0"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 export const testimonials = pgTable("testimonials", {
   id: id(),
@@ -97,6 +131,10 @@ export const workEntries = pgTable("work_entries", {
   projectType: projectTypeEnum("project_type"),
   projectDescription: text("project_description"),
   timeSpent: numeric("time_spent", { precision: 6, scale: 2 }),
+  laborRateType: laborRateTypeEnum("labor_rate_type")
+    .notNull()
+    .default("standard"),
+  laborRate: numeric("labor_rate", { precision: 8, scale: 2 }),
   workNotes: text("work_notes"),
   customerNotes: text("customer_notes"),
   scopeChangeDate: text("scope_change_date"),

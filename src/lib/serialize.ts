@@ -32,6 +32,8 @@ type DbEntry = {
   projectType: string | null;
   projectDescription: string | null;
   timeSpent: string | null;
+  laborRateType: string;
+  laborRate: string | null;
   workNotes: string | null;
   customerNotes: string | null;
   scopeChangeDate: string | null;
@@ -84,6 +86,8 @@ export function serializeEntry(e: DbEntry): EntryRow {
     projectType: e.projectType ?? "",
     projectDescription: e.projectDescription ?? "",
     timeSpent: e.timeSpent ?? "",
+    laborRateType: e.laborRateType === "specialty" ? "specialty" : "standard",
+    laborRate: e.laborRate ?? "",
     workNotes: e.workNotes ?? "",
     customerNotes: e.customerNotes ?? "",
     scopeChangeDate: e.scopeChangeDate ?? "",
