@@ -59,7 +59,8 @@ export async function POST(request: Request) {
   try {
     const reply = await askDiagnosisQuestion(messages);
     return NextResponse.json({ reply });
-  } catch {
+  } catch (err) {
+    console.error("diagnosis-chat error:", err);
     return NextResponse.json(
       {
         error:
