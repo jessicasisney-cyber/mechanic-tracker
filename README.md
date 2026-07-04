@@ -24,6 +24,14 @@ private link to check their own job status — all synced across every device.
       invoice (`/app/invoice/[job-id]`) with labor and parts as separate line
       items - Texas doesn't tax labor on vehicle repairs, only parts, so this
       is a legal requirement, not just a formatting choice
+- [x] Dated Job Log: each job has a running, timestamped log of updates
+      (who wrote it and when) instead of one note that gets overwritten -
+      any entry can be flagged "Shared with customer" to show up on that
+      job's tracking page
+- [x] "Explain My Diagnosis" AI assistant (Claude Haiku) - a plain-English
+      explainer chat for anyone confused by something a mechanic or
+      dashboard light told them. Public at `/ask`, and embedded on every
+      job's tracking page pre-filled with that job's own details
 
 ## Site map
 
@@ -31,6 +39,7 @@ private link to check their own job status — all synced across every device.
   meant to be browsed and indexed by search engines
 - `/track/[job-id]` — public, no login, but **not** browsable or indexed —
   only reachable via the exact link copied from a job in the tracker
+- `/ask` — public, no login, indexed — the "Explain My Diagnosis" AI chat
 - `/app` — the internal tracker, requires login
 - `/login` — staff login
 
@@ -45,6 +54,8 @@ private link to check their own job status — all synced across every device.
   (`src/lib/sms/provider.ts`) so switching providers later is a contained change.
 - **Vercel Blob** — stores job photos (compressed in the browser before upload).
 - **Resend** — sends the contact-form and customer-update emails to the shop.
+- **Claude (Anthropic API, Haiku model)** — powers the "Explain My Diagnosis"
+  chat that translates mechanic-speak into plain English.
 
 ## Local development
 
@@ -86,6 +97,48 @@ include it directly in a text.
 That page also lets a customer report a part they sourced themselves (with an
 optional tracking number). It emails the shop and shows up as a blue
 "💬 CUSTOMER UPDATE" badge on that job in the tracker.
+
+## The Job Log
+
+Every job has a "Job Log" in its drawer: a running list of dated, timestamped
+updates instead of a single note field that gets overwritten. Add as many
+entries as the job needs across however many visits it takes — each one
+records who wrote it and when. Check "Share with customer" on any entry to
+have it show up as a dated "Updates" timeline on that job's tracking page
+(everything else stays internal-only by default).
+
+## The "Explain My Diagnosis" AI assistant
+
+A chat feature, powered by Claude, that explains car problems in plain
+English for anyone confused by something a mechanic or dashboard light told
+them — the way a doctor explains a diagnosis, not a technical readout.
+
+- Public and free-standing at `/ask` (linked in the site nav) for anyone,
+  customer or not.
+- Also embedded on every job's tracking page, pre-filled with that job's
+  vehicle and description so a customer can just hit "Explain This To Me."
+- Deliberately limited: it never quotes a price and never says whether
+  something is safe to drive on or how urgent it is - only a hands-on
+  inspection can answer that, so it always points people toward scheduling
+  an appointment instead of guessing.
+- Uses Claude Haiku, Anthropic's smallest and cheapest model, since this is
+  a low-volume, short-answer use case. Real-world cost is a fraction of a
+  cent per conversation - even a few hundred conversations a month would
+  stay under a few dollars.
+- Fails gracefully like the other integrations here: until `ANTHROPIC_API_KEY`
+  is set, the chat shows a friendly "not turned on yet" message with the
+  shop's phone number instead of breaking.
+
+### Turning on the AI assistant
+
+Needs an [Anthropic API key](https://console.anthropic.com):
+
+1. Sign up and create an API key.
+2. Copy it into `ANTHROPIC_API_KEY` (both locally in `.env` and in Vercel's
+   environment variables for production).
+
+Until that's set, `/ask` and the tracking-page chat both work fine and show
+a clear message instead of erroring.
 
 ## Turning on photo uploads
 

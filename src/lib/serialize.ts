@@ -1,4 +1,10 @@
-import type { CustomerUpdateRow, EntryRow, PartRow, PhotoRow } from "./types";
+import type {
+  CustomerUpdateRow,
+  EntryRow,
+  PartRow,
+  PhotoRow,
+  WorkLogRow,
+} from "./types";
 
 type DbPart = {
   id: string;
@@ -24,6 +30,14 @@ type DbCustomerUpdate = {
   createdAt: Date;
 };
 
+type DbWorkLog = {
+  id: string;
+  note: string;
+  visibleToCustomer: boolean;
+  createdAt: Date;
+  author: { name: string } | null;
+};
+
 type DbEntry = {
   id: string;
   date: string;
@@ -34,7 +48,6 @@ type DbEntry = {
   timeSpent: string | null;
   laborRateType: string;
   laborRate: string | null;
-  workNotes: string | null;
   customerNotes: string | null;
   scopeChangeDate: string | null;
   scopeChangeNotes: string | null;
@@ -42,6 +55,7 @@ type DbEntry = {
   parts: DbPart[];
   photos: DbPhoto[];
   customerUpdates: DbCustomerUpdate[];
+  workLogEntries: DbWorkLog[];
 };
 
 function serializePart(p: DbPart): PartRow {
@@ -74,6 +88,16 @@ function serializeCustomerUpdate(u: DbCustomerUpdate): CustomerUpdateRow {
   };
 }
 
+function serializeWorkLog(l: DbWorkLog): WorkLogRow {
+  return {
+    id: l.id,
+    note: l.note,
+    visibleToCustomer: l.visibleToCustomer,
+    authorName: l.author?.name ?? "",
+    createdAt: l.createdAt.toISOString(),
+  };
+}
+
 export function serializeEntry(e: DbEntry): EntryRow {
   return {
     id: e.id,
@@ -88,12 +112,12 @@ export function serializeEntry(e: DbEntry): EntryRow {
     timeSpent: e.timeSpent ?? "",
     laborRateType: e.laborRateType === "specialty" ? "specialty" : "standard",
     laborRate: e.laborRate ?? "",
-    workNotes: e.workNotes ?? "",
     customerNotes: e.customerNotes ?? "",
     scopeChangeDate: e.scopeChangeDate ?? "",
     scopeChangeNotes: e.scopeChangeNotes ?? "",
     parts: e.parts.map(serializePart),
     photos: e.photos.map(serializePhoto),
     customerUpdates: e.customerUpdates.map(serializeCustomerUpdate),
+    workLogEntries: e.workLogEntries.map(serializeWorkLog),
   };
 }

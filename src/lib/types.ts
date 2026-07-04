@@ -22,6 +22,14 @@ export type CustomerUpdateRow = {
   createdAt: string;
 };
 
+export type WorkLogRow = {
+  id: string;
+  note: string;
+  visibleToCustomer: boolean;
+  authorName: string;
+  createdAt: string;
+};
+
 export type EntryRow = {
   id: string;
   date: string;
@@ -35,13 +43,13 @@ export type EntryRow = {
   timeSpent: string;
   laborRateType: "standard" | "specialty";
   laborRate: string;
-  workNotes: string;
   customerNotes: string;
   scopeChangeDate: string;
   scopeChangeNotes: string;
   parts: PartRow[];
   photos: PhotoRow[];
   customerUpdates: CustomerUpdateRow[];
+  workLogEntries: WorkLogRow[];
 };
 
 export function blankPart(): PartRow {
@@ -55,7 +63,10 @@ export function blankPart(): PartRow {
   };
 }
 
-export function blankEntry(): Omit<EntryRow, "id" | "photos" | "customerUpdates"> {
+export function blankEntry(): Omit<
+  EntryRow,
+  "id" | "photos" | "customerUpdates" | "workLogEntries"
+> {
   return {
     date: new Date().toISOString().split("T")[0],
     customerName: "",
@@ -68,7 +79,6 @@ export function blankEntry(): Omit<EntryRow, "id" | "photos" | "customerUpdates"
     timeSpent: "",
     laborRateType: "standard",
     laborRate: "",
-    workNotes: "",
     customerNotes: "",
     scopeChangeDate: "",
     scopeChangeNotes: "",

@@ -20,6 +20,7 @@ const LOCAL_BUSINESS_JSON_LD = {
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
+  { href: "/ask", label: "Explain My Diagnosis" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },

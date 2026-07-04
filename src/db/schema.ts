@@ -163,6 +163,21 @@ export const parts = pgTable("parts", {
     .defaultNow(),
 });
 
+export const workLogEntries = pgTable("work_log_entries", {
+  id: id(),
+  workEntryId: text("work_entry_id")
+    .notNull()
+    .references(() => workEntries.id, { onDelete: "cascade" }),
+  authorId: text("author_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  note: text("note").notNull(),
+  visibleToCustomer: boolean("visible_to_customer").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const photos = pgTable("photos", {
   id: id(),
   workEntryId: text("work_entry_id")
@@ -230,6 +245,21 @@ export const workEntriesRelations = relations(
     photos: many(photos),
     smsMessages: many(smsMessages),
     customerUpdates: many(customerUpdates),
+    workLogEntries: many(workLogEntries),
+  })
+);
+
+export const workLogEntriesRelations = relations(
+  workLogEntries,
+  ({ one }) => ({
+    workEntry: one(workEntries, {
+      fields: [workLogEntries.workEntryId],
+      references: [workEntries.id],
+    }),
+    author: one(users, {
+      fields: [workLogEntries.authorId],
+      references: [users.id],
+    }),
   })
 );
 

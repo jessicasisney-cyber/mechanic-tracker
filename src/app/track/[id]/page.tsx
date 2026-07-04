@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getPublicEntry } from "@/lib/track";
 import { UpdateForm } from "./UpdateForm";
+import { DiagnosisChat } from "@/components/DiagnosisChat";
 
 export const metadata: Metadata = {
   title: "Job Status",
@@ -21,6 +22,14 @@ function dateDisplay(date: string) {
   const d = new Date(date + "T12:00:00");
   return d.toLocaleDateString("en-US", {
     month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function updateDateDisplay(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
@@ -93,6 +102,26 @@ export default async function TrackingPage({
           </div>
         )}
 
+        {entry.updates.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[#94a3b8]">
+              Updates
+            </h2>
+            <div className="mt-3 flex flex-col gap-3 border-l-2 border-[#e2e8f0] pl-4">
+              {[...entry.updates].reverse().map((u) => (
+                <div key={u.id}>
+                  <div className="text-[11px] font-semibold text-[#94a3b8]">
+                    {updateDateDisplay(u.createdAt)}
+                  </div>
+                  <p className="text-sm leading-relaxed text-[#374151]">
+                    {u.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {entry.parts.length > 0 && (
           <div className="mt-6">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[#94a3b8]">
@@ -143,7 +172,17 @@ export default async function TrackingPage({
           </div>
         )}
 
-        <div className="mt-10 rounded-xl border border-[#e2e8f0] bg-white p-5">
+        <div className="mt-10">
+          <DiagnosisChat
+            compact
+            showVehicleFields={false}
+            vehicleType={entry.vehicleType}
+            makeModel={entry.makeModel}
+            initialText={entry.projectDescription}
+          />
+        </div>
+
+        <div className="mt-6 rounded-xl border border-[#e2e8f0] bg-white p-5">
           <h2 className="text-sm font-bold text-[#0f172a]">
             Ordered a part yourself?
           </h2>

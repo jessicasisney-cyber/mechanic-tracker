@@ -70,7 +70,6 @@ export const entryInputSchema = z.object({
     emptyToUndefined,
     z.coerce.number().min(0).max(1000).optional()
   ),
-  workNotes: z.preprocess(emptyToUndefined, z.string().max(4000).optional()),
   customerNotes: z.preprocess(
     emptyToUndefined,
     z.string().max(4000).optional()

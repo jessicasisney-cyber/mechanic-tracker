@@ -1,6 +1,12 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { customers, parts, photos, workEntries } from "@/db/schema";
+import {
+  customers,
+  parts,
+  photos,
+  workEntries,
+  workLogEntries,
+} from "@/db/schema";
 import type { EntryInput } from "./entry-schema";
 import { sendSmsForEntry } from "./sms/send";
 
@@ -53,6 +59,10 @@ export async function listEntries() {
       parts: { orderBy: [asc(parts.sortOrder)] },
       photos: { orderBy: [asc(photos.createdAt)] },
       customerUpdates: { orderBy: (cu, { desc }) => [desc(cu.createdAt)] },
+      workLogEntries: {
+        orderBy: [desc(workLogEntries.createdAt)],
+        with: { author: { columns: { name: true } } },
+      },
     },
     orderBy: [desc(workEntries.date), desc(workEntries.createdAt)],
   });
@@ -67,6 +77,30 @@ export async function getEntry(id: string) {
       parts: { orderBy: [asc(parts.sortOrder)] },
     },
   });
+}
+
+export async function addWorkLogEntry(
+  workEntryId: string,
+  authorId: string,
+  note: string,
+  visibleToCustomer: boolean
+) {
+  const [log] = await db
+    .insert(workLogEntries)
+    .values({ workEntryId, authorId, note, visibleToCustomer })
+    .returning();
+  return log;
+}
+
+export async function setWorkLogVisibility(id: string, visibleToCustomer: boolean) {
+  await db
+    .update(workLogEntries)
+    .set({ visibleToCustomer })
+    .where(eq(workLogEntries.id, id));
+}
+
+export async function deleteWorkLogEntry(id: string) {
+  await db.delete(workLogEntries).where(eq(workLogEntries.id, id));
 }
 
 export async function createEntry(input: EntryInput, userId: string) {
@@ -91,7 +125,6 @@ export async function createEntry(input: EntryInput, userId: string) {
         timeSpent: input.timeSpent?.toString(),
         laborRateType: input.laborRateType,
         laborRate: input.laborRate?.toString(),
-        workNotes: input.workNotes,
         customerNotes: input.customerNotes,
         scopeChangeDate: input.scopeChangeDate,
         scopeChangeNotes: input.scopeChangeNotes,
@@ -144,7 +177,6 @@ export async function updateEntry(id: string, input: EntryInput) {
         timeSpent: input.timeSpent?.toString() ?? null,
         laborRateType: input.laborRateType,
         laborRate: input.laborRate?.toString() ?? null,
-        workNotes: input.workNotes,
         customerNotes: input.customerNotes,
         scopeChangeDate: input.scopeChangeDate,
         scopeChangeNotes: input.scopeChangeNotes,

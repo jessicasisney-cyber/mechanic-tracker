@@ -10,9 +10,13 @@ import {
   type EntryRow,
   type PartRow,
   type PhotoRow,
+  type WorkLogRow,
 } from "@/lib/types";
 
-type FormState = Omit<EntryRow, "id" | "photos" | "customerUpdates">;
+type FormState = Omit<
+  EntryRow,
+  "id" | "photos" | "customerUpdates" | "workLogEntries"
+>;
 
 type SmsMessage = {
   id: string;
@@ -94,6 +98,11 @@ export function WorkTracker({
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [workLog, setWorkLog] = useState<WorkLogRow[]>([]);
+  const [newLogNote, setNewLogNote] = useState("");
+  const [newLogVisible, setNewLogVisible] = useState(false);
+  const [addingLog, setAddingLog] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
 
   const [smsBody, setSmsBody] = useState("");
   const [smsHistory, setSmsHistory] = useState<SmsMessage[]>([]);
@@ -142,6 +151,10 @@ export function WorkTracker({
     setFormError(null);
     setPhotos([]);
     setPhotoError(null);
+    setWorkLog([]);
+    setNewLogNote("");
+    setNewLogVisible(false);
+    setLogError(null);
     setSmsBody("");
     setSmsHistory([]);
     setSmsError(null);
@@ -162,7 +175,6 @@ export function WorkTracker({
       timeSpent: entry.timeSpent,
       laborRateType: entry.laborRateType,
       laborRate: entry.laborRate || laborRates.standard,
-      workNotes: entry.workNotes,
       customerNotes: entry.customerNotes,
       scopeChangeDate: entry.scopeChangeDate,
       scopeChangeNotes: entry.scopeChangeNotes,
@@ -173,6 +185,10 @@ export function WorkTracker({
     setFormError(null);
     setPhotos(entry.photos);
     setPhotoError(null);
+    setWorkLog(entry.workLogEntries);
+    setNewLogNote("");
+    setNewLogVisible(false);
+    setLogError(null);
     setSmsBody(
       `Hi ${entry.customerName.split(" ")[0] || "there"}, this is an update on your ${
         entry.makeModel || "vehicle"
@@ -301,6 +317,92 @@ export function WorkTracker({
     );
   }
 
+  async function addLogEntry() {
+    if (!editId || !newLogNote.trim()) return;
+    setAddingLog(true);
+    setLogError(null);
+    try {
+      const res = await fetch(`/api/entries/${editId}/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          note: newLogNote.trim(),
+          visibleToCustomer: newLogVisible,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLogError(data.error || "Couldn't add that update.");
+        return;
+      }
+      const log = data.log as WorkLogRow;
+      setWorkLog((prev) => [log, ...prev]);
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.id === editId
+            ? { ...e, workLogEntries: [log, ...e.workLogEntries] }
+            : e
+        )
+      );
+      setNewLogNote("");
+      setNewLogVisible(false);
+    } catch {
+      setLogError("Couldn't add that update. Check your connection.");
+    } finally {
+      setAddingLog(false);
+    }
+  }
+
+  async function deleteLogEntry(logId: string) {
+    const res = await fetch(`/api/work-log/${logId}`, { method: "DELETE" });
+    if (!res.ok) return;
+    setWorkLog((prev) => prev.filter((l) => l.id !== logId));
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === editId
+          ? {
+              ...e,
+              workLogEntries: e.workLogEntries.filter((l) => l.id !== logId),
+            }
+          : e
+      )
+    );
+  }
+
+  async function toggleLogVisibility(log: WorkLogRow) {
+    const nextValue = !log.visibleToCustomer;
+    setWorkLog((prev) =>
+      prev.map((l) =>
+        l.id === log.id ? { ...l, visibleToCustomer: nextValue } : l
+      )
+    );
+    const res = await fetch(`/api/work-log/${log.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibleToCustomer: nextValue }),
+    });
+    if (!res.ok) {
+      setWorkLog((prev) =>
+        prev.map((l) =>
+          l.id === log.id ? { ...l, visibleToCustomer: !nextValue } : l
+        )
+      );
+      return;
+    }
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === editId
+          ? {
+              ...e,
+              workLogEntries: e.workLogEntries.map((l) =>
+                l.id === log.id ? { ...l, visibleToCustomer: nextValue } : l
+              ),
+            }
+          : e
+      )
+    );
+  }
+
   async function resolveCustomerUpdate(updateId: string) {
     setEntries((prev) =>
       prev.map((e) =>
@@ -388,10 +490,11 @@ export function WorkTracker({
         const partText = e.parts
           .map((p) => `${p.partName} ${p.vendor}`)
           .join(" ");
+        const logText = e.workLogEntries.map((l) => l.note).join(" ");
         return (
           e.customerName.toLowerCase().includes(q) ||
           e.makeModel.toLowerCase().includes(q) ||
-          e.workNotes.toLowerCase().includes(q) ||
+          logText.toLowerCase().includes(q) ||
           e.projectDescription.toLowerCase().includes(q) ||
           e.projectType.toLowerCase().includes(q) ||
           partText.toLowerCase().includes(q)
@@ -442,7 +545,7 @@ export function WorkTracker({
       "Part Costs",
       "Part Statuses",
       "Receipt Refs",
-      "Work Notes",
+      "Job Log",
       "Customer Notes",
       "Scope Change Date",
       "Scope Change Notes",
@@ -451,6 +554,9 @@ export function WorkTracker({
       parts.map((p) => p[key] || "").join(" | ");
     const rows = [headers.join(",")];
     entries.forEach((e) => {
+      const logText = e.workLogEntries
+        .map((l) => `${dateDisplay(l.createdAt.split("T")[0])}: ${l.note}`)
+        .join(" | ");
       rows.push(
         [
           e.date,
@@ -466,7 +572,7 @@ export function WorkTracker({
           joinParts(e.parts, "partCost"),
           joinParts(e.parts, "partStatus"),
           joinParts(e.parts, "receiptRef"),
-          e.workNotes,
+          logText,
           e.customerNotes,
           e.scopeChangeDate,
           e.scopeChangeNotes,
@@ -794,9 +900,9 @@ export function WorkTracker({
                           ⚠ SCOPE CHANGE
                         </span>
                       )}
-                      {entry.workNotes && (
+                      {entry.workLogEntries.length > 0 && (
                         <div className="block truncate text-[12px] text-[#64748b]">
-                          {entry.workNotes}
+                          {entry.workLogEntries[0].note}
                         </div>
                       )}
                     </td>
@@ -1343,20 +1449,96 @@ export function WorkTracker({
                 </div>
               )}
 
+              {/* JOB LOG */}
+              <div className="border-t border-[#f1f5f9] pt-3">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+                  Job Log
+                </div>
+                {!editId ? (
+                  <div className="text-[12px] text-[#94a3b8]">
+                    Save this entry first, then add dated updates here as
+                    work progresses over multiple visits.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {workLog.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {workLog.map((log) => (
+                          <div
+                            key={log.id}
+                            className="rounded-lg border border-[#f1f5f9] bg-[#fafafa] p-3"
+                          >
+                            <p className="text-[13px] text-[#0f172a]">
+                              {log.note}
+                            </p>
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <span className="text-[11px] text-[#94a3b8]">
+                                {new Date(log.createdAt).toLocaleString()}
+                                {log.authorName ? ` · ${log.authorName}` : ""}
+                              </span>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <button
+                                  onClick={() => toggleLogVisibility(log)}
+                                  title="Customers can see updates marked shared on their tracking page"
+                                  className={`rounded-md px-1.5 py-1 text-[10px] font-semibold leading-tight ${
+                                    log.visibleToCustomer
+                                      ? "bg-[#dbeafe] text-[#1e40af]"
+                                      : "bg-[#f1f5f9] text-[#64748b]"
+                                  }`}
+                                >
+                                  {log.visibleToCustomer
+                                    ? "✓ Shared with customer"
+                                    : "Internal only"}
+                                </button>
+                                <button
+                                  onClick={() => deleteLogEntry(log.id)}
+                                  className="text-[11px] font-semibold text-[#dc2626]"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      value={newLogNote}
+                      onChange={(e) => setNewLogNote(e.target.value)}
+                      placeholder="What happened today? Issues found, parts tried, outcomes…"
+                      rows={2}
+                      className={`${inputClass} resize-y`}
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="flex items-center gap-1.5 text-[12px] text-[#374151]">
+                        <input
+                          type="checkbox"
+                          checked={newLogVisible}
+                          onChange={(e) => setNewLogVisible(e.target.checked)}
+                        />
+                        Share with customer
+                      </label>
+                      <button
+                        onClick={addLogEntry}
+                        disabled={addingLog || !newLogNote.trim()}
+                        className="rounded-md bg-[#2563eb] px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-60"
+                      >
+                        {addingLog ? "Adding…" : "Add Update"}
+                      </button>
+                    </div>
+                    {logError && (
+                      <div className="rounded-md border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[13px] font-medium text-[#dc2626]">
+                        {logError}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* NOTES */}
               <div className="border-t border-[#f1f5f9] pt-3 text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
                 Notes
               </div>
-
-              <Field label="Work Notes">
-                <textarea
-                  value={form.workNotes}
-                  onChange={(e) => setField("workNotes", e.target.value)}
-                  placeholder="What happened? Issues found, parts tried, outcomes…"
-                  rows={3}
-                  className={`${inputClass} resize-y`}
-                />
-              </Field>
 
               <Field label="Customer Notes">
                 <textarea

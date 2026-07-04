@@ -14,6 +14,12 @@ export type PublicPhoto = {
   caption: string;
 };
 
+export type PublicUpdate = {
+  id: string;
+  note: string;
+  createdAt: string;
+};
+
 export type PublicEntry = {
   id: string;
   customerFirstName: string;
@@ -26,6 +32,7 @@ export type PublicEntry = {
   scopeChangeNotes: string;
   parts: PublicPart[];
   photos: PublicPhoto[];
+  updates: PublicUpdate[];
 };
 
 export async function getPublicEntry(id: string): Promise<PublicEntry | null> {
@@ -37,6 +44,11 @@ export async function getPublicEntry(id: string): Promise<PublicEntry | null> {
       photos: {
         columns: { id: true, url: true, caption: true },
         where: (photos, { eq }) => eq(photos.visibleToCustomer, true),
+      },
+      workLogEntries: {
+        columns: { id: true, note: true, createdAt: true },
+        where: (log, { eq }) => eq(log.visibleToCustomer, true),
+        orderBy: (log, { asc }) => [asc(log.createdAt)],
       },
     },
   });
@@ -62,6 +74,11 @@ export async function getPublicEntry(id: string): Promise<PublicEntry | null> {
       id: p.id,
       url: p.url,
       caption: p.caption ?? "",
+    })),
+    updates: entry.workLogEntries.map((l) => ({
+      id: l.id,
+      note: l.note,
+      createdAt: l.createdAt.toISOString(),
     })),
   };
 }
