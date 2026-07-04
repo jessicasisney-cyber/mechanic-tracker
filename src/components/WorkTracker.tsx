@@ -97,6 +97,15 @@ export function WorkTracker({
   const [smsSending, setSmsSending] = useState(false);
   const [smsError, setSmsError] = useState<string | null>(null);
   const [smsSent, setSmsSent] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  function copyTrackingLink(entryId: string) {
+    const url = `${window.location.origin}/track/${entryId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }
 
   const refreshEntries = useCallback(async () => {
     try {
@@ -808,6 +817,14 @@ export function WorkTracker({
                 {editId ? "Edit Entry" : "New Entry"}
               </div>
               <div className="flex-1" />
+              {editId && (
+                <button
+                  onClick={() => copyTrackingLink(editId)}
+                  className="mr-2 rounded-md border border-[#e2e8f0] bg-white px-2.5 py-1 text-[12px] font-semibold text-[#2563eb]"
+                >
+                  {linkCopied ? "Copied!" : "Copy Customer Link"}
+                </button>
+              )}
               <button
                 onClick={closeForm}
                 className="rounded px-1.5 py-0.5 text-[22px] leading-none text-[#94a3b8]"
@@ -1179,6 +1196,19 @@ export function WorkTracker({
                           Tip: click 📎 on a photo above to add its link here
                         </div>
                       )}
+                      <button
+                        onClick={() =>
+                          setSmsBody((prev) => {
+                            const url = `${window.location.origin}/track/${editId}`;
+                            return prev.includes(url)
+                              ? prev
+                              : `${prev.trim()}\n${url}`.trim();
+                          })
+                        }
+                        className="self-start text-[11px] font-semibold text-[#2563eb] underline"
+                      >
+                        + Add "track your job" link
+                      </button>
                       <textarea
                         value={smsBody}
                         onChange={(e) => setSmsBody(e.target.value)}
